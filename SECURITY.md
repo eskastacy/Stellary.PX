@@ -62,6 +62,10 @@ the security model is built around explicit, reversible actions:
   reported, not worked around with invasive techniques.
 - **Instrumentation scan.** A process-name match is a warning, not proof of
   malicious activity. The list is intentionally small and read-only.
+- **No first-party antivirus certification.** Releases are not submitted to
+  VirusTotal or a security vendor by default, and the build host may not have a
+  scanner enabled. Verify `SHA256SUMS.txt`, inspect the source, or scan the
+  archive with an engine you trust before deploying it widely.
 - **Local data.** Settings, presets, and logs are readable by the current user.
   Backups under `%ProgramData%` follow the machine's ACLs. Do not store secrets
   in preset files.

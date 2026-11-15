@@ -73,8 +73,11 @@ pipeline supports real signing and will label a signed build only after
   including timer, power-plan, and registry round-trips.
 - Six deterministic UI captures reviewed with matching `selected='<key>'` log
   lines.
-- Release folder: 24 files hashed; manifest verification passes.
+- Release folder: 26 files hashed; manifest verification passes.
 - Authenticode: `NotSigned` (expected for this build).
+- Local antivirus scan: not performed. Windows Defender is disabled by policy on
+  the build host, so no first-party scan result exists. Scan the archive with
+  your own engine and compare against the published manifest.
 
 ## Links
 
