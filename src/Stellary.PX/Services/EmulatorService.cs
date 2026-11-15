@@ -21,14 +21,36 @@ public sealed class EmulatorService
             var procs = System.Diagnostics.Process.GetProcessesByName("HD-Player");
             if (procs.Length > 0)
             {
-                var p = procs[0];
-                string? path = null;
-                string priority = "—";
-                try { path = p.MainModule?.FileName; } catch { }
-                try { priority = p.PriorityClass.ToString(); } catch { }
+                // Multi-instance BlueStacks can expose several players; prefer the one with a window.
+                var p = procs.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.MainWindowTitle)) ?? procs[0];
+                var path = Infrastructure.NativeMethods.TryGetProcessPath(p.Id);
+                var priority = Infrastructure.NativeMethods.TryGetPriority(p.Id);
 
                 var family = Classify(path);
-                var root = KnownRoots.FirstOrDefault(Directory.Exists) ?? InstallRootFromPath(path);
+                if (family == "BlueStacks / MSI")
+                {
+                    var title = p.MainWindowTitle ?? "";
+                    if (title.Contains("MSI", StringComparison.OrdinalIgnoreCase))
+                        family = "MSI App Player 5";
+                    else if (title.Contains("BlueStacks", StringComparison.OrdinalIgnoreCase))
+                        family = "BlueStacks 5";
+                }
+
+                var root = InstallRootFromPath(path);
+                if (root is null)
+                {
+                    root = family == "MSI App Player 5"
+                        ? KnownRoots.FirstOrDefault(r =>
+                            r.Contains("msi5", StringComparison.OrdinalIgnoreCase) && Directory.Exists(r))
+                        : KnownRoots.FirstOrDefault(Directory.Exists);
+                }
+
+                if (path is null && root is not null)
+                {
+                    var candidate = Path.Combine(root, p.ProcessName + ".exe");
+                    if (File.Exists(candidate)) path = candidate;
+                }
+
                 return new EmulatorTarget
                 {
                     Running = true,
@@ -62,7 +84,7 @@ public sealed class EmulatorService
         if (string.IsNullOrEmpty(path)) return "BlueStacks / MSI";
         if (path.Contains("msi5", StringComparison.OrdinalIgnoreCase) ||
             path.Contains("MSI App", StringComparison.OrdinalIgnoreCase)) return "MSI App Player 5";
-        if (path.Contains("BlueStacks_nxt", StringComparison.OrdinalIgnoreCase)) return "BlueStacks 5";
+        if (path.Contains("BlueStacks", StringComparison.OrdinalIgnoreCase)) return "BlueStacks 5";
         return "BlueStacks / MSI";
     }
 
@@ -72,9 +94,7 @@ public sealed class EmulatorService
         try
         {
             var dir = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(dir)) return null;
-            var parent = Path.GetDirectoryName(dir);
-            return parent;
+            return !string.IsNullOrEmpty(dir) && Directory.Exists(dir) ? dir : null;
         }
         catch { return null; }
     }

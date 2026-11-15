@@ -5,7 +5,7 @@
     Authenticode signature.
 
 .EXAMPLE
-    .\scripts\Verify-Release.ps1 -Path .\dist\Stellary.PX-0.1.0-win-x64 -Sums .\dist\Stellary.PX-0.1.0-win-x64\SHA256SUMS.txt
+    .\scripts\Verify-Release.ps1 -Path .\dist\Stellary.PX-0.1.1-win-x64 -Sums .\dist\Stellary.PX-0.1.1-win-x64\SHA256SUMS.txt
 
 .EXAMPLE
     .\scripts\Verify-Release.ps1 -Path .\Stellary.PX.exe -Sums .\SHA256SUMS.txt -RequireSignature

@@ -21,7 +21,7 @@ package references; a restore should not introduce third-party binaries.
 dotnet run --project tests\Stellary.PX.Tests -c Release
 ```
 
-Expected: `passed 16 | failed 0 | skipped 3`.
+Expected: `passed 17 | failed 0 | skipped 3`.
 
 Read-only coverage:
 
@@ -37,6 +37,7 @@ Read-only coverage:
 | Power plan query | `powercfg` parsing and GUID shape |
 | Timer query | `NtQueryTimerResolution` returns a usable value |
 | System sample | CPU/RAM values stay in range |
+| Process probe | Limited-query path and priority reads work on real processes |
 | Machine fingerprint | Stable, formatted, not the raw MachineGuid |
 | Emulator detection | Process/install integrity without mutation |
 | Cache measurement | Scoped scan returns sane counts |
@@ -50,7 +51,7 @@ Read-only coverage:
 dotnet run --project tests\Stellary.PX.Tests -c Release -- --system --verbose
 ```
 
-Expected: `passed 19 | failed 0 | skipped 0`.
+Expected: `passed 20 | failed 0 | skipped 0`.
 
 | Check | Mutation | Restore |
 |---|---|---|
@@ -110,7 +111,8 @@ lost selection is invalid even if the PNG exists.
 - [ ] Overview chart has a non-empty trace and both CPU/RAM legends.
 - [ ] Gauge value matches the CPU numeral.
 - [ ] Pipeline rows show mechanism hints, not blank details.
-- [ ] Emulator empty states read `no active process` / `not detected`.
+- [ ] Emulator empty states read `no active process` / `not detected`; a blocked
+      path reads `path protected by emulator`.
 - [ ] Driver table shows full SHA-256 values and signature labels.
 - [ ] System power name is readable and not truncated mid-word.
 - [ ] Timer slider shows 0.5–2.0 ms endpoints.
@@ -130,7 +132,10 @@ MSI App Player 5 where available.
 |---|---|
 | Emulator not running | Standby, `no active process`, no priority mutation |
 | Emulator running | PID shown, Boost available, priority reads current class |
+| Emulator path denied to normal APIs | Path still resolved via limited query; page shows the real path |
+| Emulator denies priority change | `Blocked by emulator protection`; stage excluded from applied count; headline `Pipeline partially engaged` |
 | Boost then restore | Priority returns to the prior class |
+| Restore without a saved power baseline | Power stage skips; no forced High Performance |
 | Timer lock 0.5 / 1.0 / 2.0 | `system resolution` reflects the request; release drops it |
 | Exit while timer held | Request released; log records exit |
 | Power activate | Ultimate or High Performance fallback reported |
@@ -167,9 +172,9 @@ MSI App Player 5 where available.
 ## 6 · Release verification
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.0
-.\scripts\Verify-Release.ps1 -Path .\dist\Stellary.PX-0.1.0-win-x64\Stellary.PX.exe `
-  -Sums .\dist\Stellary.PX-0.1.0-win-x64\SHA256SUMS.txt
+.\scripts\Build-Release.ps1 -Version 0.1.1
+.\scripts\Verify-Release.ps1 -Path .\dist\Stellary.PX-0.1.1-win-x64\Stellary.PX.exe `
+  -Sums .\dist\Stellary.PX-0.1.1-win-x64\SHA256SUMS.txt
 ```
 
 If signed:

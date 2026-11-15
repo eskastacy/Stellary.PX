@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Stellary.PX.Tests</RootNamespace>
     <AssemblyName>Stellary.PX.Tests</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Company>EskaProject-X</Company>
     <Product>Stellary.PX test harness</Product>
   </PropertyGroup>

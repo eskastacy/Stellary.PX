@@ -4,6 +4,41 @@ All notable changes to Stellary.PX are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-11-15
+
+Correctness release for emulator detection and pipeline reporting. No new
+capabilities; no changes to what the app is allowed to modify.
+
+### Fixed
+
+- BlueStacks 5.22 detection no longer depends on `Process.MainModule`, which the
+  emulator blocks even for elevated administrators. The image path and priority
+  are read through `PROCESS_QUERY_LIMITED_INFORMATION` +
+  `QueryFullProcessImageName`, so the Emulator page now shows the family, PID,
+  executable path, install root, and current priority class.
+- The Overview headline no longer prints `Pipeline engaged` after a denied
+  stage. It distinguishes `Pipeline engaged`, `Pipeline partially engaged`,
+  `Pipeline active · no emulator`, and `Engine stand-by`.
+- Applied-step counts exclude deliberately skipped stages, so `3/4 steps
+  applied` means three real changes rather than three non-failed results.
+- A target that rejects priority changes is reported as
+  `Blocked by emulator protection` instead of a generic elevation message.
+- A protected executable path is shown as `path protected by emulator` instead
+  of `no active process`.
+- The power-plan baseline is captured once and cleared after a successful
+  restore. Repeated runs no longer overwrite the original scheme GUID, and
+  Restore without a saved baseline skips instead of forcing High Performance.
+- Startup derives engagement from the current session only; stale registry
+  backups can no longer make the app claim a pipeline run that did not happen.
+
+### Changed
+
+- Service harness: 17 read-only checks (new process-probe coverage) and 20
+  checks with `--system`.
+- Emulator priority is documented as best-effort. BlueStacks 5.22 denies
+  `PROCESS_SET_INFORMATION` to external processes; the app reports the block and
+  leaves the target untouched.
+
 ## [0.1.0] — 2026-11-15
 
 First public community build. Framework-dependent, unsigned unless a release

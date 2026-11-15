@@ -29,6 +29,10 @@ public sealed class OverviewViewModel : PageViewModel
     private string _cacheText = "—";
     private int _frame;
     private bool _engaged;
+    private bool _lastRunPartial;
+    private bool _runActive;
+    private bool _priorityBlocked;
+    private int _priorityPid = -1;
     private EmulatorTarget _target = new();
 
     public OverviewViewModel(AppServices services)
@@ -103,11 +107,7 @@ public sealed class OverviewViewModel : PageViewModel
         if (_frame % 30 == 0) RefreshPower();
         if (_frame % 8 == 0) RefreshCache();
 
-        IsEngaged = _services.Engine.Timer.IsHeld ||
-                    _target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase);
-
-        if (!IsBusy)
-            Headline = IsEngaged ? "Pipeline engaged." : "Engine stand-by.";
+        UpdateHeadline();
     }
 
     private void RefreshStatic()
@@ -118,19 +118,51 @@ public sealed class OverviewViewModel : PageViewModel
         var s = _services.Settings.Current;
         _rowRegistry.On = _services.Engine.Registry.AnyBackup(s);
         _rowRegistry.Detail = _rowRegistry.On ? $"{s.RegistryBackup.Count} values tracked" : "not applied";
-        IsEngaged = _services.Engine.Timer.IsHeld || _target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase);
-        Headline = IsEngaged ? "Pipeline engaged." : "Engine stand-by.";
+        UpdateHeadline();
+    }
+
+    private void UpdateHeadline()
+    {
+        if (IsBusy) return;
+
+        IsEngaged = _runActive ||
+                    _services.Engine.Timer.IsHeld ||
+                    _target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase);
+
+        if (!_target.Running)
+            Headline = IsEngaged ? "Pipeline active · no emulator." : "Engine stand-by.";
+        else if (IsEngaged && _lastRunPartial)
+            Headline = "Pipeline partially engaged.";
+        else
+            Headline = IsEngaged ? "Pipeline engaged." : "Engine stand-by.";
     }
 
     private void RefreshTarget()
     {
         _target = _services.Engine.Emulator.Detect();
+        if (!_target.Running)
+        {
+            _priorityPid = -1;
+            _priorityBlocked = false;
+        }
+        else if (_target.Pid != _priorityPid)
+        {
+            _priorityPid = _target.Pid;
+            _priorityBlocked = false;
+        }
+
+        // A successful manual boost or an externally raised class clears the block.
+        if (_target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase))
+            _priorityBlocked = false;
+
         TargetText = _target.Running ? $"{_target.DisplayName} · PID {_target.Pid}" : "No emulator process";
         PriorityText = _target.Running ? _target.Priority : "—";
         _rowTarget.On = _target.Running;
         _rowTarget.Detail = _target.Running ? $"{_target.DisplayName} · {_target.Pid}" : "waiting for launch";
         _rowPriority.On = _target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase);
-        _rowPriority.Detail = _target.Running ? _target.Priority : "idle";
+        _rowPriority.Detail = _target.Running
+            ? _priorityBlocked ? $"{_target.Priority} · boost blocked" : _target.Priority
+            : "idle";
     }
 
     private void RefreshPower()
@@ -175,20 +207,33 @@ public sealed class OverviewViewModel : PageViewModel
         try
         {
             var report = await _services.Engine.ApplyAsync();
-            var ok = report.Steps.Count(s => s.Ok);
+            var applied = report.Steps.Count(s => s.Ok && !s.Skipped);
+            var failed = report.Steps.Where(s => !s.Ok).ToList();
+            _lastRunPartial = failed.Count > 0;
+            _runActive = applied > 0;
+
+            var priority = report.Steps.FirstOrDefault(s => s.Label == "Emulator priority");
+            _priorityBlocked = priority is { Ok: false } &&
+                               priority.Detail.Contains("Blocked", StringComparison.OrdinalIgnoreCase);
+
             ApplyRows(report.Steps);
-            StatusNote = $"{ok}/{report.Steps.Count} steps applied · {report.Target.DisplayName}";
+            StatusNote = !report.Target.Running
+                ? $"{applied}/{report.Steps.Count} steps applied · emulator not detected"
+                : failed.Count > 0
+                    ? $"{applied}/{report.Steps.Count} steps applied · {failed[0].Detail}"
+                    : $"{applied}/{report.Steps.Count} steps applied · {report.Target.DisplayName}";
             RefreshStatic();
         }
         catch (Exception ex)
         {
             AppLog.Error("overview", ex.Message);
+            _lastRunPartial = true;
             StatusNote = "Pipeline failed: " + ex.Message;
         }
         finally
         {
             IsBusy = false;
-            Headline = "Pipeline engaged.";
+            UpdateHeadline();
         }
     }
 
@@ -199,8 +244,13 @@ public sealed class OverviewViewModel : PageViewModel
         try
         {
             var report = await _services.Engine.RestoreAsync();
+            var failed = report.Steps.Where(s => !s.Ok).ToList();
             ApplyRows(report.Steps, restoring: true);
-            StatusNote = "Defaults restored. Timer released, registry reverted.";
+            _lastRunPartial = false;
+            _runActive = false;
+            StatusNote = failed.Count == 0
+                ? "Defaults restored. Timer released, registry reverted."
+                : $"Restore incomplete · {failed[0].Detail}";
             RefreshStatic();
         }
         catch (Exception ex)
@@ -211,7 +261,7 @@ public sealed class OverviewViewModel : PageViewModel
         finally
         {
             IsBusy = false;
-            Headline = "Engine stand-by.";
+            UpdateHeadline();
         }
     }
 
@@ -229,7 +279,7 @@ public sealed class OverviewViewModel : PageViewModel
             };
             if (row is null) continue;
             row.Detail = step.Detail;
-            row.On = restoring ? false : step.Ok;
+            row.On = !restoring && step.Ok && !step.Skipped;
         }
     }
 }

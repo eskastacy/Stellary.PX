@@ -60,6 +60,12 @@ the security model is built around explicit, reversible actions:
 - **Third-party emulator.** BlueStacks and MSI App Player may change process
   names, install paths, driver names, or cache layouts. Detection failures are
   reported, not worked around with invasive techniques.
+- **Protected emulator processes.** BlueStacks 5.22 denies
+  `PROCESS_SET_INFORMATION` to external processes, including elevated
+  administrators; `SeDebugPrivilege` does not change that. Priority and path
+  reads use `PROCESS_QUERY_LIMITED_INFORMATION`, and a denied priority change is
+  reported as `Blocked by emulator protection`. The app does not install a
+  kernel driver, inject code, or otherwise bypass the emulator's protection.
 - **Instrumentation scan.** A process-name match is a warning, not proof of
   malicious activity. The list is intentionally small and read-only.
 - **No first-party antivirus certification.** Releases are not submitted to

@@ -23,8 +23,11 @@ restores what can be restored. Every row names the mechanism it uses
 (`SetPriorityClass`, `NtSetTimerResolution`, `powercfg`, `HKCU`).
 
 ### Emulator
-- Detects `HD-Player.exe` and classifies BlueStacks 5 vs. MSI App Player 5.
-- Boosts the running emulator to `AboveNormal` and restores the prior class.
+- Detects `HD-Player.exe` and classifies BlueStacks 5 vs. MSI App Player 5, even
+  when the emulator blocks path access to the normal process APIs.
+- Boosts the running emulator to `AboveNormal` and restores the prior class when
+  the target permits it. BlueStacks 5.22 denies priority changes; the app reports
+  `Blocked by emulator protection` instead of bypassing the protection.
 - Measures and clears compiled QML caches only; application data and games are
   preserved.
 - Inventories BlueStacks kernel drivers with file version, full SHA-256, and
@@ -159,7 +162,7 @@ The release helper performs a clean publish, writes `SHA256SUMS.txt`, and
 produces a versioned ZIP:
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.0
+.\scripts\Build-Release.ps1 -Version 0.1.1
 ```
 
 Signing requires `signtool.exe` and a CA-issued certificate:
@@ -182,8 +185,8 @@ The service harness has no external dependencies:
 dotnet run --project tests\Stellary.PX.Tests -c Release
 ```
 
-The default pass is read-only (16 checks). Add `--system` to exercise the
-reversible timer, power-plan, and registry round-trips (19 checks). The harness
+The default pass is read-only (17 checks). Add `--system` to exercise the
+reversible timer, power-plan, and registry round-trips (20 checks). The harness
 captures and restores real state, then prints `passed / failed / skipped`.
 
 UI verification uses the deterministic capture mode:
@@ -206,8 +209,8 @@ save, and log `selected='<key>'`. See [docs/05-TEST-PLAN.md](docs/05-TEST-PLAN.m
 - Long operations run on the thread pool; the dispatcher only receives results.
 - Settings and presets use an atomic JSON store; logs are append-only.
 - Native interop is limited to `NtSetTimerResolution` /
-  `NtQueryTimerResolution`, memory/CPU sampling, DWM attributes, and
-  `WinVerifyTrust`.
+  `NtQueryTimerResolution`, memory/CPU sampling, DWM attributes, limited-query
+  process probes, and `WinVerifyTrust`.
 
 Read [docs/03-ARCHITECTURE.md](docs/03-ARCHITECTURE.md) for the layer map and
 [docs/02-FEATURE-MAP.md](docs/02-FEATURE-MAP.md) for the source-to-rebuild

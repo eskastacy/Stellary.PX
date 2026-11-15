@@ -79,7 +79,9 @@ public sealed class EmulatorViewModel : PageViewModel
         _target = _services.Engine.Emulator.Detect();
         TargetName = _target.DisplayName;
         TargetState = _target.Running ? $"Running · PID {_target.Pid}" : "Standby";
-        TargetPath = _target.ExecutablePath ?? "no active process";
+        TargetPath = _target.Running
+            ? _target.ExecutablePath ?? "path protected by emulator"
+            : "no active process";
         InstallDir = _target.InstallDirectory ?? "not detected";
         Priority = _target.Running ? _target.Priority : "—";
     }
@@ -97,7 +99,9 @@ public sealed class EmulatorViewModel : PageViewModel
         _target = target;
         TargetName = target.DisplayName;
         TargetState = target.Running ? $"Running · PID {target.Pid}" : "Standby";
-        TargetPath = target.ExecutablePath ?? "no active process";
+        TargetPath = target.Running
+            ? target.ExecutablePath ?? "path protected by emulator"
+            : "no active process";
         InstallDir = target.InstallDirectory ?? "not detected";
         Priority = target.Running ? target.Priority : "—";
         CacheText = $"{CacheService.Format(cache.Bytes)} · {cache.Folders} folders";

@@ -56,12 +56,7 @@ public sealed partial class PowerPlanService
     public StepResult Restore(string? guid)
     {
         if (string.IsNullOrWhiteSpace(guid))
-        {
-            var high = ShellRunner.Run("powercfg.exe", $"/setactive {HighPerformanceGuid}");
-            return high.Ok
-                ? StepResult.Success("Power plan", "High Performance")
-                : StepResult.Fail("Power plan", "No saved scheme");
-        }
+            return StepResult.Skip("Power plan", "No saved scheme");
 
         var r = ShellRunner.Run("powercfg.exe", $"/setactive {guid}");
         return r.Ok

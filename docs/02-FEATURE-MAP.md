@@ -3,17 +3,17 @@
 How each observed capability of `reference tool` maps to Stellary.PX. Status
 values:
 
-- **Shipped** — implemented and reachable in 0.1.0.
+- **Shipped** — implemented and reachable in the current build.
 - **Shipped, changed** — implemented with a deliberate safety or transparency
   change.
 - **Partial** — the durable half is implemented; the live pipeline is not.
-- **Deferred** — designed but not part of 0.1.0.
+- **Deferred** — designed but not part of the current build.
 - **Removed** — intentionally not reproduced.
 
 | # | Source capability | Implementation | Status |
 |---:|---|---|---|
 | 1 | Discover the emulator process and install | `Services/EmulatorService.cs`, `ViewModels/EmulatorViewModel.cs` | Shipped |
-| 2 | Raise emulator process priority | `Services/PriorityService.cs` | Shipped |
+| 2 | Raise emulator process priority | `Services/PriorityService.cs` | Shipped, changed |
 | 3 | Request finer timer resolution | `Services/TimerService.cs`, `Infrastructure/NativeMethods.cs` | Shipped |
 | 4 | Activate Ultimate Performance | `Services/PowerPlanService.cs` | Shipped |
 | 5 | GameDVR / FSE / Game Bar registry values | `Services/RegistryTweaksService.cs` | Shipped |
@@ -32,6 +32,22 @@ values:
 | 18 | Anti-debug / anti-tamper behavior | — | Removed |
 
 ## Notes per deviation
+
+### 2 · Process priority
+
+Priority changes are best-effort by design. Windows normally grants
+`PROCESS_SET_INFORMATION` to an elevated caller, but BlueStacks 5.22 denies it to
+every external process, including administrators with `SeDebugPrivilege`
+enabled. Stellary.PX therefore:
+
+1. Reads the target image and priority with `PROCESS_QUERY_LIMITED_INFORMATION`,
+   which BlueStacks still permits.
+2. Attempts `SetPriorityClass(AboveNormal)` only while the emulator is running.
+3. Reports `Blocked by emulator protection` on Win32 error 5 and leaves the
+   process untouched.
+4. Skips the stage as already applied when the target is already above normal,
+   and skips restore when no boost is held.
+5. Never installs a driver, injects code, or otherwise bypasses the protection.
 
 ### 7 · Driver repair
 
@@ -57,7 +73,7 @@ attaches to the emulator's graphics API, negotiates swap intervals, paces frames
 and injects a post-process pass. That module is a separate engineering
 deliverable, not a checkbox.
 
-0.1.0 therefore:
+0.1.x therefore:
 
 - Compiles the ten visual parameters into `%APPDATA%\Stellary.PX\visuals.json`.
 - Provides Competitive, Cinema, and Clean baselines.
@@ -120,8 +136,10 @@ Stellary.PX does not:
 
 | Claim | Evidence |
 |---|---|
-| Read-only probes work | `Stellary.PX.Tests` default pass (16 checks) |
-| Timer, power, registry are reversible | `Stellary.PX.Tests --system` (19 checks) |
+| Read-only probes work | `Stellary.PX.Tests` default pass (17 checks) |
+| Timer, power, registry are reversible | `Stellary.PX.Tests --system` (20 checks) |
+| Process path/priority probes tolerate protected targets | `process probe` test |
+| Priority denial is reported, not hidden | `priority` log line + Overview applied count |
 | Checksum parser accepts sha256sum format | `checksum manifest parser` test |
 | Emulator and driver inventory are real | `emulator detection`, `driver inventory` tests |
 | UI pages render and are labeled correctly | deterministic capture logs + PNG review |

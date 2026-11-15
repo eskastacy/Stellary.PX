@@ -31,7 +31,12 @@ public sealed class OptimizerEngine
             Infrastructure.AppLog.Info("engine", $"apply start (target={target.DisplayName}, running={target.Running})");
 
             if (target.Running)
-                steps.Add(Priority.SetAboveNormal(target.Pid));
+            {
+                if (target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase))
+                    steps.Add(StepResult.Skip("Emulator priority", $"Already {target.Priority}"));
+                else
+                    steps.Add(Priority.SetAboveNormal(target.Pid));
+            }
             else
                 steps.Add(StepResult.Skip("Emulator priority", "Target not running"));
 
@@ -40,7 +45,8 @@ public sealed class OptimizerEngine
             if (s.ApplyPowerPlan)
             {
                 var result = Power.ActivateUltimate(out var prior);
-                if (prior is not null) s.LastPowerPlanGuid = prior;
+                if (result.Ok && string.IsNullOrWhiteSpace(s.LastPowerPlanGuid) && prior is not null)
+                    s.LastPowerPlanGuid = prior;
                 steps.Add(result);
             }
             else steps.Add(StepResult.Skip("Power plan", "Disabled"));
@@ -61,11 +67,17 @@ public sealed class OptimizerEngine
             var steps = new List<StepResult>();
             var target = Emulator.Detect();
 
-            if (target.Running) steps.Add(Priority.Restore(target.Pid));
-            else steps.Add(StepResult.Skip("Emulator priority", "Target not running"));
+            if (target.Running && target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase))
+                steps.Add(Priority.Restore(target.Pid));
+            else if (target.Running)
+                steps.Add(StepResult.Skip("Emulator priority", $"No boost to restore ({target.Priority})"));
+            else
+                steps.Add(StepResult.Skip("Emulator priority", "Target not running"));
 
             steps.Add(Timer.Release());
-            steps.Add(Power.Restore(s.LastPowerPlanGuid));
+            var powerRestore = Power.Restore(s.LastPowerPlanGuid);
+            if (powerRestore.Ok) s.LastPowerPlanGuid = null;
+            steps.Add(powerRestore);
             steps.Add(Registry.Restore(s));
             Settings.Save();
 

@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Stellary.PX.Core;
+using Stellary.PX.Infrastructure;
 
 namespace Stellary.PX.Services;
 
@@ -7,32 +7,36 @@ public sealed class PriorityService
 {
     public StepResult SetAboveNormal(int pid)
     {
-        try
+        var (ok, error) = NativeMethods.TrySetPriority(pid, aboveNormal: true);
+        if (ok)
         {
-            using var p = Process.GetProcessById(pid);
-            p.PriorityClass = ProcessPriorityClass.AboveNormal;
-            Infrastructure.AppLog.Info("priority", $"PID {pid} -> AboveNormal");
+            AppLog.Info("priority", $"PID {pid} -> AboveNormal");
             return StepResult.Success("Emulator priority", "Above normal");
         }
-        catch (Exception ex)
-        {
-            Infrastructure.AppLog.Warn("priority", $"PID {pid} set failed: {ex.Message}");
-            return StepResult.Fail("Emulator priority", "Needs elevation or target closed");
-        }
+
+        AppLog.Warn("priority", $"PID {pid} set failed (win32 {error})");
+        return StepResult.Fail("Emulator priority", Explain(error));
     }
 
     public StepResult Restore(int pid)
     {
-        try
+        var (ok, error) = NativeMethods.TrySetPriority(pid, aboveNormal: false);
+        if (ok)
         {
-            using var p = Process.GetProcessById(pid);
-            p.PriorityClass = ProcessPriorityClass.Normal;
-            Infrastructure.AppLog.Info("priority", $"PID {pid} -> Normal");
+            AppLog.Info("priority", $"PID {pid} -> Normal");
             return StepResult.Success("Emulator priority", "Normal");
         }
-        catch (Exception ex)
-        {
-            return StepResult.Fail("Emulator priority", ex.Message);
-        }
+
+        AppLog.Warn("priority", $"PID {pid} restore failed (win32 {error})");
+        return StepResult.Fail("Emulator priority", Explain(error));
     }
+
+    private static string Explain(int error) => error switch
+    {
+        5 => "Blocked by emulator protection",
+        87 => "Target closed",
+        1168 => "Target closed",
+        -1 => "Priority probe failed",
+        _ => $"Windows error {error}"
+    };
 }

@@ -84,7 +84,7 @@
                         <TextBlock Text="{Binding Priority}" FontFamily="{StaticResource F.Light}" FontSize="22"
                                    Foreground="{StaticResource B.Text}" Margin="0,7,0,4" />
                         <TextBlock Style="{StaticResource T.Small}"
-                                   Text="Above-normal scheduling gives the emulator more CPU time while the desktop remains responsive. Restored on demand." />
+                                   Text="Above-normal scheduling gives the emulator more CPU time while the desktop stays responsive. BlueStacks 5.22 can deny priority changes; the app reports the block instead of bypassing it." />
                         <Border Style="{StaticResource Hairline}" Margin="0,12" />
                         <TextBlock Text="Applies to HD-Player.exe automatically on pipeline start." Style="{StaticResource T.Small}" />
                     </StackPanel>

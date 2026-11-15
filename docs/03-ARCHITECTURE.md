@@ -66,15 +66,16 @@ BrandingConfig
 
 ```text
 detect target
-  → priority (if running)
+  → priority (if running and not already above normal)
   → timer lock (if enabled)
-  → power plan (if enabled, capturing prior GUID)
+  → power plan (if enabled, capturing prior GUID once)
   → registry (if enabled, capturing prior values)
   → save settings
 ```
 
-`RestoreAsync()` reverses the reversible stages: priority, timer, power, and
-registry. Cache cleanup and driver repair are separate, explicit actions.
+`RestoreAsync()` reverses only the stages it applied: priority when a boost is
+held, timer, saved power plan, and registry. A stage with nothing to restore is
+reported as skipped, not as success.
 
 ### Infrastructure
 
@@ -84,7 +85,7 @@ registry. Cache cleanup and driver repair are separate, explicit actions.
 | `JsonStore` | Atomic JSON load/save with camelCase and case-insensitive reads |
 | `AppLog` | Thread-safe append-only daily log; never throws into callers |
 | `ShellRunner` | Bounded external process execution, URL opening, elevation |
-| `NativeMethods` | Timer APIs, system sampling, DWM attributes, elevation check |
+| `NativeMethods` | Timer APIs, system sampling, DWM attributes, limited-query process probes, elevation check |
 | `Authenticode` | `WinVerifyTrust` wrapper with no UI and no network validation |
 | `CaptureMode` | Deterministic visual-tree capture for UI verification |
 | `BrandingConfig` | Product identity, developer profile, social links |
@@ -92,8 +93,9 @@ registry. Cache cleanup and driver repair are separate, explicit actions.
 
 ### Domain and persistence
 
-- `StepResult` is the outcome of one pipeline stage: label, success flag, detail.
-  Skips count as success; failures are values, not exceptions on the UI path.
+- `StepResult` is the outcome of one pipeline stage: label, success flag, detail,
+  and a `Skipped` marker. A skip is not a failure, but it is not an applied
+  change either; the UI counts only stages that actually ran.
 - `AppSettings` stores opt-ins, the last power GUID, registry backups, and visual
   parameters.
 - Settings are saved after every apply/restore and after behavior toggles.

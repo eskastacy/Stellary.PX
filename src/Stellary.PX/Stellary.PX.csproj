@@ -9,12 +9,12 @@
     <RootNamespace>Stellary.PX</RootNamespace>
     <AssemblyName>Stellary.PX</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.1.0</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.1.1</Version>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <FileVersion>0.1.1.0</FileVersion>
     <Company>EskaProject-X</Company>
     <Product>Stellary.PX</Product>
-    <Description>Emulator performance console — frame pacing, system tuning, diagnostics.</Description>
+    <Description>Emulator performance console — system tuning, visual presets, diagnostics.</Description>
     <Copyright>Copyright (C) 2026 Eska Stacy / EskaProject-X</Copyright>
     <NeutralLanguage>en-US</NeutralLanguage>
     <InvariantGlobalization>false</InvariantGlobalization>

@@ -1,9 +1,36 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Stellary.PX.Infrastructure;
 
 public static class NativeMethods
 {
+    private const uint ProcessQueryLimitedInformation = 0x1000;
+    private const uint ProcessSetInformation = 0x0200;
+
+    private const uint IdlePriorityClass = 0x00000040;
+    private const uint BelowNormalPriorityClass = 0x00004000;
+    private const uint NormalPriorityClass = 0x00000020;
+    private const uint AboveNormalPriorityClass = 0x00008000;
+    private const uint HighPriorityClass = 0x00000080;
+    private const uint RealtimePriorityClass = 0x00000100;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageName(
+        IntPtr process, uint flags, StringBuilder name, ref uint size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint GetPriorityClass(IntPtr process);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetPriorityClass(IntPtr process, uint priorityClass);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr handle);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct FILETIME
     {
@@ -34,6 +61,87 @@ public static class NativeMethods
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    /// <summary>Reads the image path with limited-query rights, which BlueStacks still permits.</summary>
+    public static string? TryGetProcessPath(int pid)
+    {
+        var handle = IntPtr.Zero;
+        try
+        {
+            handle = OpenProcess(ProcessQueryLimitedInformation, false, pid);
+            if (handle == IntPtr.Zero) return null;
+
+            var buffer = new StringBuilder(1024);
+            var size = (uint)buffer.Capacity;
+            return QueryFullProcessImageName(handle, 0, buffer, ref size)
+                ? buffer.ToString()
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            if (handle != IntPtr.Zero) CloseHandle(handle);
+        }
+    }
+
+    /// <summary>Reads the current priority class; returns "protected" when the target denies even a query.</summary>
+    public static string TryGetPriority(int pid)
+    {
+        var handle = IntPtr.Zero;
+        try
+        {
+            handle = OpenProcess(ProcessQueryLimitedInformation, false, pid);
+            if (handle == IntPtr.Zero) return "protected";
+
+            return GetPriorityClass(handle) switch
+            {
+                IdlePriorityClass => "Idle",
+                BelowNormalPriorityClass => "Below normal",
+                NormalPriorityClass => "Normal",
+                AboveNormalPriorityClass => "Above normal",
+                HighPriorityClass => "High",
+                RealtimePriorityClass => "Realtime",
+                _ => "unknown"
+            };
+        }
+        catch
+        {
+            return "unknown";
+        }
+        finally
+        {
+            if (handle != IntPtr.Zero) CloseHandle(handle);
+        }
+    }
+
+    /// <summary>
+    /// Sets the priority class and returns the Win32 error instead of throwing.
+    /// BlueStacks 5.22 denies PROCESS_SET_INFORMATION even to elevated admins,
+    /// which surfaces here as error 5.
+    /// </summary>
+    public static (bool Ok, int Error) TrySetPriority(int pid, bool aboveNormal)
+    {
+        var handle = IntPtr.Zero;
+        try
+        {
+            handle = OpenProcess(ProcessSetInformation, false, pid);
+            if (handle == IntPtr.Zero) return (false, Marshal.GetLastWin32Error());
+
+            var ok = SetPriorityClass(handle, aboveNormal ? AboveNormalPriorityClass : NormalPriorityClass);
+            return (ok, ok ? 0 : Marshal.GetLastWin32Error());
+        }
+        catch
+        {
+            return (false, -1);
+        }
+        finally
+        {
+            if (handle != IntPtr.Zero) CloseHandle(handle);
+        }
+    }
 
     [DllImport("ntdll.dll")]
     public static extern int NtSetTimerResolution(uint desiredResolution, bool setResolution, out uint currentResolution);

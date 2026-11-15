@@ -50,6 +50,7 @@ internal static class Program
         Run("power plan query", PowerPlanQuery);
         Run("timer resolution query", TimerResolutionQuery);
         Run("system sample is in range", SystemSampleRange);
+        Run("process probe", ProcessProbe);
         Run("machine fingerprint is stable and opaque", MachineFingerprint);
         Run("emulator detection", EmulatorDetection);
         Run("QML cache measurement", CacheMeasurement);
@@ -244,6 +245,15 @@ internal static class Program
         Assert(total > 0, $"total {total}");
     }
 
+    private static void ProcessProbe()
+    {
+        var path = NativeMethods.TryGetProcessPath(Environment.ProcessId);
+        Assert(path is not null && File.Exists(path), $"own image path: {path ?? "null"}");
+        var priority = NativeMethods.TryGetPriority(Environment.ProcessId);
+        Assert(!string.IsNullOrWhiteSpace(priority) && priority is not "protected" and not "unknown",
+            "own priority: " + priority);
+    }
+
     private static void MachineFingerprint()
     {
         var first = IdentityService.Hwid();
@@ -315,6 +325,8 @@ internal static class Program
         var fail = Stellary.PX.Core.StepResult.Fail("e", "f");
         Assert(ok.Ok, "success should be ok");
         Assert(skip.Ok, "skip should not count as failure");
+        Assert(skip.Skipped, "skip should be marked as skipped");
+        Assert(!ok.Skipped && !fail.Skipped, "only a skip carries the skip flag");
         Assert(!fail.Ok, "failure should not be ok");
     }
 

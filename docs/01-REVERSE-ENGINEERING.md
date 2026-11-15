@@ -112,10 +112,10 @@ The observable feature set, independent of implementation details:
 11. Detect instrumentation tools.
 12. Present all of it in a custom dark interface with live telemetry.
 
-Items 1–7 and 12 are implemented in Stellary.PX. Item 8–9 are scoped as an
-optional native renderer module; 0.1.0 compiles presets and reports the renderer
-as not attached. Items 10–11 are intentionally removed or reduced to read-only
-reporting. See [02 · Feature map](02-FEATURE-MAP.md).
+Items 1–7 and 12 are implemented in Stellary.PX. Items 8–9 are scoped as an
+optional native renderer module; the current build compiles presets and reports
+the renderer as not attached. Items 10–11 are intentionally removed or reduced to
+read-only reporting. See [02 · Feature map](02-FEATURE-MAP.md).
 
 ## Ethics and reproducibility
 
