@@ -5,8 +5,7 @@ small dependencies, and reversible changes over cleverness.
 
 ## Ground rules
 
-- Keep the UI original. Do not copy assets, layouts, strings, or code from
-  reference tool or other commercial tools.
+- Keep the UI original. Do not copy assets, layouts, strings, or code from other commercial tools.
 - Do not add license bypasses, anti-debugging, process hiding, remote payload
   downloads, or telemetry.
 - Do not simulate signatures or label an unsigned build as signed.
