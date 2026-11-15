@@ -30,6 +30,19 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Resolve release notes
+        id: meta
+        shell: pwsh
+        run: |
+          $tag = if ('${{ inputs.tag }}') { '${{ inputs.tag }}' } else { '${{ github.ref_name }}' }
+          $version = $tag.TrimStart('v')
+          $notes = "docs/RELEASE-NOTES-$version.md"
+          if (-not (Test-Path -LiteralPath $notes)) {
+            throw "Missing release notes: $notes. Write them before tagging."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "notes=$notes" >> $env:GITHUB_OUTPUT
+
       - name: Build, test, sign, hash, archive
         shell: pwsh
         run: |
@@ -65,19 +78,15 @@ jobs:
           $dir = Get-ChildItem dist -Directory | Select-Object -First 1
           ./scripts/Verify-Release.ps1 -Path $dir.FullName -Sums (Join-Path $dir.FullName 'SHA256SUMS.txt')
 
-      - name: Publish GitHub release
+      - name: Publish draft GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          name: Stellary.PX ${{ inputs.tag || github.ref_name }}
-          generate_release_notes: true
-          body: |
-            Windows x64, framework-dependent. Install the .NET 8 Desktop Runtime.
-
-            Verify `SHA256SUMS.txt` before running. The Authenticode status is
-            reported in the build log; an unsigned build is never labeled signed.
-
-            Full documentation and release notes are inside the archive.
+          name: Stellary.PX ${{ steps.meta.outputs.version }}
+          body_path: ${{ steps.meta.outputs.notes }}
+          draft: true
+          overwrite_files: false
           files: |
             dist/*.zip
             dist/*.zip.sha256
             dist/*/SHA256SUMS.txt
+            ${{ steps.meta.outputs.notes }}

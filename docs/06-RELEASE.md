@@ -160,18 +160,30 @@ a hash into prose as the only source of truth — the manifest is authoritative.
    git push origin v0.1.1
    ```
 
-3. The `release` workflow builds the tagged commit. If
-   `CERT_PFX_BASE64` and `CERT_PASSWORD` repository secrets exist, it decodes the
-   PFX into the runner temp directory, signs, verifies, hashes, and archives. If
-   they do not exist, it publishes an explicitly unsigned build.
-4. Attach:
+3. The `release` workflow builds the tagged commit and creates a **draft**
+   GitHub release. It requires `docs/RELEASE-NOTES-<version>.md` and fails
+   before building when the notes are missing. If `CERT_PFX_BASE64` and
+   `CERT_PASSWORD` repository secrets exist, it decodes the PFX into the runner
+   temp directory, signs, verifies, hashes, and archives. If they do not exist,
+   it builds an explicitly unsigned release.
+4. The draft body is the versioned notes file, and these assets are attached
+   automatically:
 
    - `Stellary.PX-<version>-win-x64.zip`
    - `Stellary.PX-<version>-win-x64.zip.sha256`
    - `SHA256SUMS.txt` (inside the ZIP and as a standalone asset)
-   - `docs/RELEASE-NOTES-<version>.md`
+   - `RELEASE-NOTES-<version>.md`
 
-5. State the signature status and signer subject in the release body.
+5. Review the draft: download the ZIP, verify `SHA256SUMS.txt`, check the
+   signature status in the workflow log, and confirm the notes. Publish the
+   draft manually.
+6. State the signature status and signer subject in the release body.
+
+Tag pushes never publish a public release directly. The draft is the hand-off
+point, so CI cannot replace hand-verified assets, overwrite custom notes, or
+publish an unreviewed binary. `overwrite_files: false` makes an asset-name
+collision fail instead of silently replacing a file; delete the draft and rerun
+if a rebuild is required.
 
 ### Repository secrets for signed CI
 
