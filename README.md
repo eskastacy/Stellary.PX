@@ -252,5 +252,5 @@ All links are configured in one place: `src/Stellary.PX/branding.json`.
 MIT. See [LICENSE](LICENSE).
 
 Stellary.PX is an independent project. It is not affiliated with BlueStacks,
-MSI, Microsoft, or the authors of reference tool. BlueStacks and MSI App Player
+MSI, Microsoft. BlueStacks and MSI App Player
 are trademarks of their respective owners.
