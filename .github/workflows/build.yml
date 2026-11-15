@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build
+        run: dotnet build Stellary.PX.sln -c Release --nologo
+
+      - name: Service harness (read-only)
+        run: dotnet run --project tests/Stellary.PX.Tests -c Release --no-build
+
+      - name: Package (unsigned)
+        shell: pwsh
+        run: ./scripts/Build-Release.ps1 -Version 0.1.0 -SkipTests
+
+      - name: Verify manifest
+        shell: pwsh
+        run: |
+          $dir = Get-ChildItem dist -Directory | Select-Object -First 1
+          ./scripts/Verify-Release.ps1 -Path $dir.FullName -Sums (Join-Path $dir.FullName 'SHA256SUMS.txt')
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Stellary.PX-unsigned
+          if-no-files-found: error
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256

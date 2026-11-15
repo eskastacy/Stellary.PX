@@ -1,0 +1,279 @@
+<UserControl x:Class="Stellary.PX.Views.OverviewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Stellary.PX.Controls">
+
+    <!-- Fixed shell: the pulse card absorbs extra height so the dashboard fills the window. -->
+    <Grid Margin="0,0,6,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="14" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="14" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ============ HERO + GAUGE ============ -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardRaised}" Height="232" ClipToBounds="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="236" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Margin="26,20,10,20" VerticalAlignment="Top">
+                        <TextBlock Text="PIPELINE / 01" Style="{StaticResource T.Eyebrow}" />
+
+                        <TextBlock Text="{Binding Headline}" FontFamily="{StaticResource F.Light}" FontSize="30"
+                                   Foreground="{StaticResource B.Text}" Margin="0,6,0,0"
+                                   TextOptions.TextFormattingMode="Display" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Ellipse Width="5" Height="5" VerticalAlignment="Center"
+                                     Fill="{Binding IsEngaged, Converter={StaticResource StatusBrush}}" />
+                            <TextBlock Text="{Binding TargetText}" FontFamily="{StaticResource F.Body}"
+                                       FontSize="11.5" Foreground="{StaticResource B.Muted}" Margin="8,0,0,0" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding StatusNote}" Style="{StaticResource T.Small}" Margin="0,5,0,0" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                            <Button Content="Start optimizer" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding StartCommand}" />
+                            <Button Content="Restore" Style="{StaticResource GhostButton}"
+                                    Command="{Binding RestoreCommand}" Margin="8,0,0,0" />
+                            <Button Style="{StaticResource IconButton}" Command="{Binding RefreshCommand}"
+                                    Margin="10,0,0,0" ToolTip="Re-verify pipeline" VerticalAlignment="Center">
+                                <Viewbox Width="15" Height="15">
+                                    <Path Data="M21 12a9 9 0 1 1-2.6-6.3 M21 3v6h-6"
+                                          Stroke="#9A9AA4" StrokeThickness="1.5" Fill="Transparent"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                                </Viewbox>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Engraved sigil -->
+                    <Canvas Grid.Column="1" Width="236" Height="232" IsHitTestVisible="False" Opacity="0.5">
+                        <Path Canvas.Left="0" Canvas.Top="0" Data="M118 22 V212" Stroke="#3A3A44" StrokeThickness="1" />
+                        <Path Data="M118 46 C 96 46, 82 32, 70 8" Stroke="#4A4A55" StrokeThickness="1" />
+                        <Path Data="M118 46 C 140 46, 154 32, 166 8" Stroke="#4A4A55" StrokeThickness="1" />
+                        <Path Data="M118 76 C 86 76, 68 54, 52 22" Stroke="#3C3C46" StrokeThickness="1" />
+                        <Path Data="M118 76 C 150 76, 168 54, 184 22" Stroke="#3C3C46" StrokeThickness="1" />
+                        <Path Data="M118 106 C 78 106, 56 80, 36 40" Stroke="#34343D" StrokeThickness="1" />
+                        <Path Data="M118 106 C 158 106, 180 80, 200 40" Stroke="#34343D" StrokeThickness="1" />
+                        <Path Data="M118 136 C 70 136, 44 104, 22 58" Stroke="#2E2E36" StrokeThickness="1" />
+                        <Path Data="M118 136 C 166 136, 192 104, 214 58" Stroke="#2E2E36" StrokeThickness="1" />
+                        <Ellipse Canvas.Left="114" Canvas.Top="14" Width="8" Height="8" Stroke="#55555F" StrokeThickness="1" />
+                        <Path Data="M118 162 l-7 12 7 12 7-12z" Stroke="#4A4A55" StrokeThickness="1" Fill="Transparent" />
+                        <Path Data="M118 196 l-4 7 4 7 4-7z" Stroke="#3A3A44" StrokeThickness="1" Fill="Transparent" />
+                        <Ellipse Canvas.Left="115.5" Canvas.Top="228" Width="5" Height="5" Fill="#3E3E48" />
+                    </Canvas>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="18,16,18,12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <TextBlock Text="SYSTEM LOAD" Style="{StaticResource T.Eyebrow}" />
+                        <TextBlock Text="0.5 s" Style="{StaticResource T.Small}" HorizontalAlignment="Right"
+                                   FontFamily="{StaticResource F.Mono}" FontSize="9.5" />
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,2,0,4">
+                        <controls:RingGauge Width="150" Height="150" Value="{Binding CpuValue}"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            TrackBrush="#383842" ValueBrush="#D8D8E1" />
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CpuText}" FontFamily="{StaticResource F.Light}"
+                                       FontSize="30" Foreground="{StaticResource B.Text}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="CPU" FontFamily="{StaticResource F.Headline}" FontSize="7.4"
+                                       Foreground="{StaticResource B.Dim}" HorizontalAlignment="Center"
+                                       Margin="0,1,0,0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Style="{StaticResource Hairline}" Margin="0,0,0,9" />
+                        <Grid Grid.Row="1">
+                            <TextBlock Text="Memory" Style="{StaticResource T.Small}" FontSize="10.5" />
+                            <TextBlock Text="{Binding RamText}" Style="{StaticResource T.Mono}" FontSize="10"
+                                       HorizontalAlignment="Right" />
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============ PULSE + PIPELINE ============ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="20,16,20,10" MinHeight="300">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="System pulse" Style="{StaticResource T.CardTitle}" />
+                            <StackPanel Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <Ellipse Width="4" Height="4" Fill="{StaticResource B.Chrome}" VerticalAlignment="Center" />
+                                <TextBlock Text="CPU" Style="{StaticResource T.Small}" FontSize="9.5" Margin="5,0,10,0" />
+                                <Ellipse Width="4" Height="4" Fill="#6E6E79" VerticalAlignment="Center" />
+                                <TextBlock Text="RAM" Style="{StaticResource T.Small}" FontSize="9.5" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Text="live" Style="{StaticResource T.Eyebrow}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+
+                    <controls:Sparkline Grid.Row="1" MinHeight="140" Margin="0,4,0,4"
+                                        Values="{Binding ChartCpu}" Secondary="{Binding ChartRam}"
+                                        Maximum="100" WindowSize="120"
+                                        Stroke="{StaticResource B.Chrome}" Stroke2="#5C5C68">
+                        <controls:Sparkline.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#1FFFFFFF" Offset="0" />
+                                <GradientStop Color="#00FFFFFF" Offset="1" />
+                            </LinearGradientBrush>
+                        </controls:Sparkline.Fill>
+                    </controls:Sparkline>
+
+                    <Grid Grid.Row="2" Margin="0,4,0,0">
+                        <TextBlock Text="60 s" Style="{StaticResource T.Small}" FontSize="9.5"
+                                   FontFamily="{StaticResource F.Mono}" />
+                        <TextBlock Text="now" Style="{StaticResource T.Small}" FontSize="9.5"
+                                   FontFamily="{StaticResource F.Mono}" HorizontalAlignment="Right" />
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="18,16,18,10" MinHeight="300">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                        <TextBlock Text="Pipeline" Style="{StaticResource T.CardTitle}" />
+                        <TextBlock Text="5 nodes" Style="{StaticResource T.Eyebrow}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+
+                    <ItemsControl Grid.Row="1" ItemsSource="{Binding Pipeline}" VerticalAlignment="Stretch">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="1" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#1B1B23" BorderThickness="0,1,0,0">
+                                <Grid Margin="0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Ellipse Width="5" Height="5" VerticalAlignment="Center"
+                                             Fill="{Binding On, Converter={StaticResource StatusBrush}}" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
+                                        <TextBlock Text="{Binding Label}" FontFamily="{StaticResource F.Body}"
+                                                   FontSize="11.5" Foreground="{StaticResource B.Text}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Hint}" FontFamily="{StaticResource F.Mono}"
+                                                   FontSize="8.5" Foreground="{StaticResource B.Dim}"
+                                                   Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="{Binding Detail}" FontFamily="{StaticResource F.Mono}"
+                                               FontSize="9.5" Foreground="{StaticResource B.Dim}"
+                                               MaxWidth="146" TextAlignment="Right"
+                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                               ToolTip="{Binding Detail}" />
+                                </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Grid Grid.Row="2">
+                        <Border Style="{StaticResource Hairline}" Margin="0,6,0,9" />
+                        <Grid Margin="0,16,0,0">
+                            <TextBlock Text="Engine" Style="{StaticResource T.Small}" FontSize="10" />
+                            <TextBlock Text="{Binding StatusNote}" Style="{StaticResource T.Small}" FontSize="9.5"
+                                       HorizontalAlignment="Right" MaxWidth="184" TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding StatusNote}" />
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============ STAT STRIP ============ -->
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="18,13">
+                <StackPanel>
+                    <TextBlock Text="FRAME TIMER" Style="{StaticResource T.Eyebrow}" />
+                    <TextBlock Text="{Binding TimerText}" FontFamily="{StaticResource F.Light}" FontSize="22"
+                               Foreground="{StaticResource B.Text}" Margin="0,5,0,2" />
+                    <TextBlock Text="NtSetTimerResolution" Style="{StaticResource T.Small}" FontSize="9.5" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="18,13">
+                <StackPanel>
+                    <TextBlock Text="POWER SCHEME" Style="{StaticResource T.Eyebrow}" />
+                    <TextBlock Text="{Binding PowerText}" FontFamily="{StaticResource F.Light}" FontSize="17"
+                               Foreground="{StaticResource B.Text}" Margin="0,7,0,3"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="powercfg · active" Style="{StaticResource T.Small}" FontSize="9.5" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="4" Style="{StaticResource Card}" Padding="18,13">
+                <StackPanel>
+                    <TextBlock Text="QML CACHE" Style="{StaticResource T.Eyebrow}" />
+                    <TextBlock Text="{Binding CacheText}" FontFamily="{StaticResource F.Light}" FontSize="22"
+                               Foreground="{StaticResource B.Text}" Margin="0,5,0,2" />
+                    <TextBlock Text="emulator data" Style="{StaticResource T.Small}" FontSize="9.5" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

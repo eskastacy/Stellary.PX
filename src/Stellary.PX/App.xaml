@@ -1,0 +1,41 @@
+﻿<Application x:Class="Stellary.PX.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Stellary.PX.ViewModels"
+             xmlns:views="clr-namespace:Stellary.PX.Views"
+             xmlns:conv="clr-namespace:Stellary.PX.Converters"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Palette.xaml" />
+                <ResourceDictionary Source="Themes/Typography.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToVisibilityConverter x:Key="BoolVis" />
+            <conv:NullToCollapsedConverter x:Key="NullVis" />
+            <conv:StatusBrushConverter x:Key="StatusBrush" />
+            <conv:StringToVisibilityConverter x:Key="StringVis" />
+
+            <DataTemplate DataType="{x:Type vm:OverviewViewModel}">
+                <views:OverviewView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:EmulatorViewModel}">
+                <views:EmulatorView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SystemViewModel}">
+                <views:SystemView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:VisualsViewModel}">
+                <views:VisualsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DiagnosticsViewModel}">
+                <views:DiagnosticsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

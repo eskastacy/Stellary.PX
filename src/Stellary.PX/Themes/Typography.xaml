@@ -1,0 +1,77 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Each static Poppins file carries one weight; pinning the file keeps the face exact. -->
+    <FontFamily x:Key="F.Body">pack://application:,,,/assets/fonts/poppins-regular.ttf#Poppins</FontFamily>
+    <FontFamily x:Key="F.Light">pack://application:,,,/assets/fonts/poppins-light.ttf#Poppins</FontFamily>
+    <FontFamily x:Key="F.Medium">pack://application:,,,/assets/fonts/poppins-medium.ttf#Poppins</FontFamily>
+    <FontFamily x:Key="F.SemiBold">pack://application:,,,/assets/fonts/poppins-semibold.ttf#Poppins</FontFamily>
+    <FontFamily x:Key="F.Display">pack://application:,,,/assets/fonts/monsieur-la-doulaise.ttf#Monsieur La Doulaise</FontFamily>
+    <FontFamily x:Key="F.Headline">pack://application:,,,/assets/fonts/cinzel.ttf#Cinzel</FontFamily>
+    <FontFamily x:Key="F.Mono">Cascadia Mono, Consolas</FontFamily>
+
+    <Style x:Key="T.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Display}" />
+        <Setter Property="FontSize" Value="54" />
+        <Setter Property="Foreground" Value="{StaticResource B.Chrome}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
+
+    <Style x:Key="T.PageTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Light}" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="Foreground" Value="{StaticResource B.Text}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    </Style>
+
+    <Style x:Key="T.Section" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Medium}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="Foreground" Value="{StaticResource B.Dim}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    </Style>
+
+    <Style x:Key="T.CardTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Medium}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource B.Text}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    </Style>
+
+    <Style x:Key="T.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Body}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource B.Muted}" />
+        <Setter Property="LineHeight" Value="19" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="T.Small" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Body}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource B.Dim}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="T.Mono" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Mono}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource B.Muted}" />
+    </Style>
+
+    <Style x:Key="T.Numeral" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Light}" />
+        <Setter Property="FontSize" Value="46" />
+        <Setter Property="Foreground" Value="{StaticResource B.Chrome}" />
+        <Setter Property="LineHeight" Value="50" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    </Style>
+
+    <Style x:Key="T.Eyebrow" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Headline}" />
+        <Setter Property="FontSize" Value="9.5" />
+        <Setter Property="Foreground" Value="{StaticResource B.Dim}" />
+    </Style>
+
+</ResourceDictionary>

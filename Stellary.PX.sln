@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CDBCD1FC-0581-4213-BBCD-24D47C6787FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stellary.PX", "src\Stellary.PX\Stellary.PX.csproj", "{06770F07-0F21-4C99-ADB2-D0292AA3BEEC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{BF86FDE0-D5AA-4379-B787-AD3247493476}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stellary.PX.Tests", "tests\Stellary.PX.Tests\Stellary.PX.Tests.csproj", "{838C509E-F10A-43A6-99EE-C2E0F912419F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06770F07-0F21-4C99-ADB2-D0292AA3BEEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06770F07-0F21-4C99-ADB2-D0292AA3BEEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06770F07-0F21-4C99-ADB2-D0292AA3BEEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06770F07-0F21-4C99-ADB2-D0292AA3BEEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{838C509E-F10A-43A6-99EE-C2E0F912419F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{838C509E-F10A-43A6-99EE-C2E0F912419F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{838C509E-F10A-43A6-99EE-C2E0F912419F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{838C509E-F10A-43A6-99EE-C2E0F912419F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{06770F07-0F21-4C99-ADB2-D0292AA3BEEC} = {CDBCD1FC-0581-4213-BBCD-24D47C6787FE}
+		{838C509E-F10A-43A6-99EE-C2E0F912419F} = {BF86FDE0-D5AA-4379-B787-AD3247493476}
+	EndGlobalSection
+EndGlobal

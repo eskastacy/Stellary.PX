@@ -1,0 +1,172 @@
+<UserControl x:Class="Stellary.PX.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,6,0">
+            <TextBlock Text="Application behavior, machine identity, and the developer profile that ships with the build."
+                       Style="{StaticResource T.Body}" Margin="2,0,0,14" />
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- General -->
+                <StackPanel Grid.Column="0">
+                    <Border Style="{StaticResource CardRaised}" Padding="22,18">
+                        <StackPanel>
+                            <TextBlock Text="BEHAVIOR" Style="{StaticResource T.Eyebrow}" />
+
+                            <Grid Margin="0,14,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Auto-optimize on launch" FontFamily="{StaticResource F.Body}"
+                                               FontSize="12" Foreground="{StaticResource B.Text}" />
+                                    <TextBlock Text="Run the pipeline once the window opens." Style="{StaticResource T.Small}" />
+                                </StackPanel>
+                                <ToggleButton Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" IsChecked="{Binding AutoOptimize, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid Margin="0,13,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Confirmations" FontFamily="{StaticResource F.Body}"
+                                               FontSize="12" Foreground="{StaticResource B.Text}" />
+                                    <TextBlock Text="Ask before cache deletion and driver replacement." Style="{StaticResource T.Small}" />
+                                </StackPanel>
+                                <ToggleButton Style="{StaticResource Switch}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" IsChecked="{Binding ConfirmActions, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Border Style="{StaticResource Hairline}" Margin="0,14,0,10" />
+                            <TextBlock Text="{Binding Status}" Style="{StaticResource T.Small}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="22,18" Margin="0,14,0,0">
+                        <StackPanel>
+                            <TextBlock Text="MACHINE" Style="{StaticResource T.Eyebrow}" />
+
+                            <TextBlock Text="MACHINE ID" Style="{StaticResource T.Eyebrow}" Margin="0,12,0,4"
+                                       Foreground="#4E4E58" />
+                            <Grid>
+                                <TextBlock Text="{Binding Hwid}" Style="{StaticResource T.Mono}" FontSize="10.5"
+                                           VerticalAlignment="Center" />
+                                <Button Content="Copy" Style="{StaticResource LinkButton}" HorizontalAlignment="Right"
+                                        Command="{Binding CopyHwidCommand}" />
+                            </Grid>
+
+                            <Border Style="{StaticResource Hairline}" Margin="0,12" />
+
+                            <TextBlock Text="DATA DIRECTORY" Style="{StaticResource T.Eyebrow}" Foreground="#4E4E58" />
+                            <TextBlock Text="{Binding DataPath}" Style="{StaticResource T.Mono}" FontSize="9.5"
+                                       Margin="0,4,0,0" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="Open data" Style="{StaticResource GhostButton}"
+                                        Command="{Binding OpenDataCommand}" />
+                                <Button Content="Reload settings" Style="{StaticResource GhostButton}"
+                                        Command="{Binding ReloadCommand}" Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <Border Style="{StaticResource Hairline}" Margin="0,14,0,12" />
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock Text="Elevation" FontFamily="{StaticResource F.Body}" FontSize="12"
+                                               Foreground="{StaticResource B.Text}" />
+                                    <TextBlock Text="{Binding ElevationText}" Style="{StaticResource T.Small}" />
+                                </StackPanel>
+                                <Button Content="Restart elevated" Style="{StaticResource GhostButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Command="{Binding ElevateCommand}" IsEnabled="{Binding CanElevate}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="22,18" Margin="0,14,0,0">
+                        <StackPanel>
+                            <TextBlock Text="PRIVACY" Style="{StaticResource T.Eyebrow}" />
+                            <TextBlock Text="Local by default." FontFamily="{StaticResource F.Medium}" FontSize="15"
+                                       Foreground="{StaticResource B.Text}" Margin="0,6,0,3" />
+                            <TextBlock Style="{StaticResource T.Small}"
+                                       Text="No telemetry, no background network calls. The only outbound requests are the links you choose to open." />
+                            <Border Style="{StaticResource Hairline}" Margin="0,12" />
+                            <TextBlock Style="{StaticResource T.Small}"
+                                       Text="Settings, presets, and logs stay on this machine. Backups live under ProgramData and are never uploaded." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Developer + about -->
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource CardRaised}" Padding="22,18">
+                        <StackPanel>
+                            <TextBlock Text="DEVELOPER" Style="{StaticResource T.Eyebrow}" />
+
+                            <TextBlock Text="{Binding DeveloperName}" FontFamily="{StaticResource F.Light}"
+                                       FontSize="24" Foreground="{StaticResource B.Text}" Margin="0,9,0,0" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding DeveloperBrand}" Style="{StaticResource T.Small}" />
+                                <TextBlock Text="  ·  " Style="{StaticResource T.Small}" />
+                                <TextBlock Text="{Binding DeveloperHandle}" Style="{StaticResource T.Small}" />
+                            </StackPanel>
+
+                            <Border Style="{StaticResource Hairline}" Margin="0,13" />
+
+                            <ItemsControl ItemsSource="{Binding Links}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4">
+                                            <TextBlock Text="{Binding Platform}" FontFamily="{StaticResource F.Body}"
+                                                       FontSize="11.5" Foreground="{StaticResource B.Text}"
+                                                       VerticalAlignment="Center" />
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding DisplayUrl}" Style="{StaticResource T.Small}" FontSize="9"
+                                                           MaxWidth="248" TextTrimming="CharacterEllipsis"
+                                                           TextWrapping="NoWrap"
+                                                           ToolTip="{Binding Url}"
+                                                           VerticalAlignment="Center" />
+                                                <Button Style="{StaticResource IconButton}" Width="22" Height="22"
+                                                        Margin="6,0,0,0"
+                                                        ToolTip="{Binding Platform}"
+                                                        Command="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding Url}">
+                                                    <Path Data="M7 17L17 7 M9 7h8v8" Stroke="#8F8F99" StrokeThickness="1.4"
+                                                          Fill="Transparent" Width="11" Height="11" Stretch="Uniform"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Border Style="{StaticResource Hairline}" Margin="0,12" />
+                            <TextBlock Text="Links are read from branding.json — one file, one edit." Style="{StaticResource T.Small}" />
+                            <Button Content="Open install folder" Style="{StaticResource LinkButton}" Margin="0,6,0,0"
+                                    Command="{Binding OpenBrandingCommand}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="22,18" Margin="0,14,0,0">
+                        <StackPanel>
+                            <TextBlock Text="ABOUT" Style="{StaticResource T.Eyebrow}" />
+                            <TextBlock Margin="0,14,0,0" Foreground="{StaticResource B.Chrome}">
+                                <Run Text="Stellary" FontFamily="{StaticResource F.Display}" FontSize="31" />
+                                <Run Text="&#8201;.PX" FontFamily="{StaticResource F.SemiBold}" FontSize="11"
+                                     Foreground="{StaticResource B.Muted}" BaselineAlignment="Baseline" />
+                            </TextBlock>
+                            <TextBlock Text="{Binding Version}" Style="{StaticResource T.Mono}" FontSize="10"
+                                       Margin="0,4,0,0" />
+                            <TextBlock Style="{StaticResource T.Small}" Margin="0,10,0,0"
+                                       Text="Independent performance console for BlueStacks 5 and MSI App Player. Community build — no license key required." />
+                            <TextBlock Style="{StaticResource T.Small}" Margin="0,8,0,0"
+                                       Text="Trademarks and emulator names belong to their owners. Stellary.PX ships its own code, UI, and configuration." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
