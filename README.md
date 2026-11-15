@@ -5,8 +5,7 @@ Black chrome, measured claims, reversible changes.
 
 ![Stellary.PX overview](screenshots/overview.png)
 
-Stellary.PX is an independent, clean-room rebuild of the behavior documented in
-`reference tool`: emulator discovery, process priority, Windows timer
+Stellary.PX is an independent, emulator discovery, process priority, Windows timer
 resolution, Ultimate Performance power schemes, GameDVR/FSE registry behavior,
 QML cache hygiene, BlueStacks driver inspection, visual preset compilation, and
 diagnostics. The interface is original. No code, assets, license logic, or
