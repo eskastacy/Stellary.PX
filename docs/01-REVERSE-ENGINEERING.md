@@ -1,6 +1,6 @@
 # 01 · Reverse engineering
 
-This document records the static study of `reference.exe` that informed the
+This document records the static study of StealthGraderTeam that informed the
 rebuild. It is evidence-first: observed structure and strings, not guesses about
 intent. No license logic was bypassed, no embedded payload was executed, and no
 network endpoint was contacted with credentials.
@@ -9,13 +9,13 @@ network endpoint was contacted with credentials.
 
 | Property | Value |
 |---|---|
-| File | `reference.exe` |
+| File | `WKWKZ` |
 | Size | 922,112 bytes |
 | SHA-256 | `296fc27720f2a2641a56de58d0d5880f5fca7ead36b1660c7ac5e2c3338310da` |
 | Format | PE32+ executable, x64 |
 | Subsystem | Windows GUI |
 | Toolchain clues | Native C++, MinGW-w64 runtime imports |
-| PDB path | `c:\Users\<builder>\OneDrive\Pictures\<project>\<project>V1\bin\x64\Release\reference.pdb` |
+| PDB path | `c:\Users\<builder>\OneDrive\Pictures\WKWKZ` |
 
 The PDB path is a build-environment artifact. It identifies the project family
 and release configuration; it is not a runtime dependency.
