@@ -1,4 +1,4 @@
-# 05 · Test plan
+# 04 · Test plan
 
 The test strategy has four layers: build, service behavior, visual capture, and
 release verification. System-changing checks are opt-in and always restore their
