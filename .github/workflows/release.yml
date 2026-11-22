@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to build, for example v0.1.2'
+        description: 'Tag to build, for example v0.1.3'
         required: true
         type: string
 
@@ -43,7 +43,7 @@ jobs:
           "version=$version" >> $env:GITHUB_OUTPUT
           "notes=$notes" >> $env:GITHUB_OUTPUT
 
-      - name: Build, test, sign, hash, archive
+      - name: Build, test, sign, hash
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -66,27 +66,34 @@ jobs:
           }
 
           try {
-            ./scripts/Build-Release.ps1 @params
+            ./scripts/Build-SingleFile.ps1 @params
           }
           finally {
             if (Test-Path -LiteralPath $pfx) { Remove-Item -LiteralPath $pfx -Force }
           }
 
-      - name: Verify manifest
+      - name: Verify executable
         shell: pwsh
         run: |
-          $dir = Get-ChildItem dist -Directory | Select-Object -First 1
-          ./scripts/Verify-Release.ps1 -Path $dir.FullName -Sums (Join-Path $dir.FullName 'SHA256SUMS.txt')
+          $ErrorActionPreference = 'Stop'
+          $exe = Get-ChildItem dist -Filter 'Stellary.PX-*-win-x64.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Single-file executable not found.' }
+          if ($exe.Length -lt 20MB) { throw "Executable is unexpectedly small: $($exe.Length) bytes." }
+          $hash = (Get-FileHash -LiteralPath $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $sidecar = Get-Content -LiteralPath ($exe.FullName + '.sha256') -Raw
+          if (-not $sidecar.StartsWith($hash)) { throw 'SHA-256 sidecar does not match the executable.' }
+          Write-Host ("{0}  {1} bytes  {2}" -f $exe.Name, $exe.Length, $hash)
+
+          $notes = Get-Content -LiteralPath '${{ steps.meta.outputs.notes }}' -Raw
+          $body = $notes.TrimEnd() + "`n`n## SHA-256`n`n$hash  $($exe.Name)`n"
+          [IO.File]::WriteAllText((Join-Path $env:RUNNER_TEMP 'release-body.md'), $body)
 
       - name: Publish draft GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: Stellary.PX ${{ steps.meta.outputs.version }}
-          body_path: ${{ steps.meta.outputs.notes }}
+          body_path: ${{ runner.temp }}/release-body.md
           draft: true
           overwrite_files: false
           files: |
-            dist/*.zip
-            dist/*.zip.sha256
-            dist/*/SHA256SUMS.txt
-            ${{ steps.meta.outputs.notes }}
+            dist/Stellary.PX-${{ steps.meta.outputs.version }}-win-x64.exe

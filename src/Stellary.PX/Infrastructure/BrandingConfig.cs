@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Stellary.PX.Infrastructure;
 
 public sealed class SocialLink
@@ -42,8 +44,32 @@ public sealed class BrandingConfig
 
     public static BrandingConfig Load()
     {
-        var config = JsonStore.Load(Paths.BrandingFile, new BrandingConfig());
-        if (config.Links.Count == 0) config.Links = new BrandingConfig().Links;
+        var fallback = LoadEmbedded();
+        var config = JsonStore.Load(Paths.BrandingFile, fallback);
+        if (config.Links.Count == 0) config.Links = fallback.Links;
         return config;
+    }
+
+    /// <summary>
+    /// Reads the branding shipped inside the assembly. A single-file release has
+    /// no branding.json next to the executable, so the embedded copy is the
+    /// baseline and a loose file still wins when the user edits one.
+    /// </summary>
+    private static BrandingConfig LoadEmbedded()
+    {
+        try
+        {
+            using var stream = typeof(BrandingConfig).Assembly
+                .GetManifestResourceStream("Stellary.PX.Payload.branding.json");
+            if (stream is null) return new BrandingConfig();
+
+            using var reader = new StreamReader(stream);
+            return JsonSerializer.Deserialize<BrandingConfig>(reader.ReadToEnd(), JsonStore.Options)
+                   ?? new BrandingConfig();
+        }
+        catch
+        {
+            return new BrandingConfig();
+        }
     }
 }

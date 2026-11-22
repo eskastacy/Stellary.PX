@@ -29,13 +29,18 @@ jobs:
 
       - name: Package (unsigned)
         shell: pwsh
-        run: ./scripts/Build-Release.ps1 -Version 0.1.2 -SkipTests
+        run: ./scripts/Build-SingleFile.ps1 -SkipTests
 
-      - name: Verify manifest
+      - name: Verify executable
         shell: pwsh
         run: |
-          $dir = Get-ChildItem dist -Directory | Select-Object -First 1
-          ./scripts/Verify-Release.ps1 -Path $dir.FullName -Sums (Join-Path $dir.FullName 'SHA256SUMS.txt')
+          $ErrorActionPreference = 'Stop'
+          $exe = Get-ChildItem dist -Filter 'Stellary.PX-*-win-x64.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Single-file executable not found.' }
+          $hash = (Get-FileHash -LiteralPath $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $sidecar = Get-Content -LiteralPath ($exe.FullName + '.sha256') -Raw
+          if (-not $sidecar.StartsWith($hash)) { throw 'SHA-256 sidecar does not match the executable.' }
+          Write-Host ("{0}  {1} bytes  {2}" -f $exe.Name, $exe.Length, $hash)
 
       - name: Upload package
         uses: actions/upload-artifact@v4
@@ -43,5 +48,5 @@ jobs:
           name: Stellary.PX-unsigned
           if-no-files-found: error
           path: |
-            dist/*.zip
-            dist/*.zip.sha256
+            dist/*.exe
+            dist/*.exe.sha256

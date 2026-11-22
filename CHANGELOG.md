@@ -4,7 +4,9 @@ All notable changes to Stellary.PX are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.3] — 2026-11-22
+
+Live 2× FPS overlay and a single-file release.
 
 ### Added
 
@@ -30,6 +32,10 @@ All notable changes to Stellary.PX are recorded here. The format follows
   next start; an already-uncapped instance is reported and left untouched.
 - The sidebar developer profile now ships with the developer portrait avatar
   (`assets/avatar.png`), cropped square for the circular badge.
+- The release is now one self-contained `Stellary.PX.exe`. `UncapEngine.dll`,
+  `UncapEngine.ini`, `branding.json`, and the avatar are embedded in the
+  assembly; the payload is extracted to
+  `%APPDATA%\Stellary.PX\payload\<version>` on first use.
 
 ### Changed
 

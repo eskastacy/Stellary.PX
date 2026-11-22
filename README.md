@@ -131,8 +131,8 @@ Details: [SECURITY.md](SECURITY.md).
 ## Requirements
 
 - Windows 10 1903+ or Windows 11, x64.
-- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-  (framework-dependent build).
+- No .NET runtime install for the release executable; it is self-contained.
+  Building from source needs the .NET 8 SDK.
 - Administrator elevation for power-scheme changes and uncap injection.
 - BlueStacks 5 or MSI App Player 5 for emulator-specific features. The rest of
   the console works without it.
@@ -141,31 +141,27 @@ Details: [SECURITY.md](SECURITY.md).
 
 ## Install and verify
 
-1. Download the release ZIP and `SHA256SUMS.txt`.
-2. Verify the archive or executable:
+1. Download `Stellary.PX-<version>-win-x64.exe` from the release.
+2. Verify the executable against the SHA-256 in the release body:
 
    ```powershell
-   Get-FileHash .\Stellary.PX.exe -Algorithm SHA256
-   Get-Content .\SHA256SUMS.txt
+   Get-FileHash .\Stellary.PX-0.1.3-win-x64.exe -Algorithm SHA256
    ```
 
-   The hashes must match. A helper is included:
-
-   ```powershell
-   .\scripts\Verify-Release.ps1 -Path .\Stellary.PX.exe -Sums .\SHA256SUMS.txt
-   ```
+   The hashes must match.
 
 3. If the release is signed, inspect the signer:
 
    ```powershell
-   Get-AuthenticodeSignature .\Stellary.PX.exe | Format-List Status,SignerCertificate
+   Get-AuthenticodeSignature .\Stellary.PX-0.1.3-win-x64.exe | Format-List Status,SignerCertificate
    ```
 
    `Status` must be `Valid` and the subject must match the published signer.
    Unsigned community builds report `NotSigned`; they are never described as
    signed.
 
-4. Extract to a folder you control and run `Stellary.PX.exe`.
+4. Run `Stellary.PX.exe`. There is no ZIP and no extraction step; the uncap
+   payload and branding are embedded and unpacked on first use.
 
 Settings, presets, and logs live in `%APPDATA%\Stellary.PX`. Driver and registry
 backups live in `%ProgramData%\Stellary.PX`.
@@ -183,11 +179,17 @@ dotnet publish src\Stellary.PX\Stellary.PX.csproj -c Release -r win-x64 `
   --self-contained false -o dist\Stellary.PX
 ```
 
-The release helper performs a clean publish, writes `SHA256SUMS.txt`, and
-produces a versioned ZIP:
+The release helper builds one self-contained executable:
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.2
+.\scripts\Build-SingleFile.ps1 -Version 0.1.3
+```
+
+Output: `dist\Stellary.PX-0.1.3-win-x64.exe` and its `.sha256` sidecar. The
+folder + ZIP helper remains available for local review:
+
+```powershell
+.\scripts\Build-Release.ps1 -Version 0.1.3
 ```
 
 The managed build ships the prebuilt
@@ -205,7 +207,7 @@ back to `g++` (WinLibs/MinGW-w64) otherwise.
 Signing requires `signtool.exe` and a CA-issued certificate:
 
 ```powershell
-.\scripts\Sign-Release.ps1 -Path .\dist\Stellary.PX\Stellary.PX.exe `
+.\scripts\Sign-Release.ps1 -Path .\dist\Stellary.PX-0.1.3-win-x64.exe `
   -Pfx .\secrets\codesign.pfx -Password (Read-Host -AsSecureString)
 ```
 
@@ -240,7 +242,7 @@ save, and log `selected='<key>'`. See [docs/05-TEST-PLAN.md](docs/05-TEST-PLAN.m
 
 ## Architecture
 
-- **.NET 8 / WPF**, framework-dependent, zero NuGet dependencies.
+- **.NET 8 / WPF**, self-contained single-file release, zero NuGet dependencies.
 - Custom window chrome, embedded OFL fonts, vector-only iconography.
 - Services are UI-agnostic and testable; the WPF layer binds to view models.
 - Long operations run on the thread pool; the dispatcher only receives results.

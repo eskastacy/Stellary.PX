@@ -1,35 +1,57 @@
 # 06 · Release
 
-The release pipeline produces a framework-dependent Windows x64 build, a
-SHA-256 manifest, and a versioned ZIP. Signing is optional but strictly real: the
-scripts require `signtool.exe` and a CA-issued certificate, and verification
-fails unless `Get-AuthenticodeSignature` reports `Valid`.
+The published release is a single self-contained Windows x64 executable,
+`Stellary.PX-<version>-win-x64.exe`. A folder + ZIP build remains available for
+local review. Signing is optional but strictly real: the scripts require
+`signtool.exe` and a CA-issued certificate, and verification fails unless
+`Get-AuthenticodeSignature` reports `Valid`.
 
 ## Versioning
 
 The version lives in `src/Stellary.PX/Stellary.PX.csproj`:
 
 ```xml
-<Version>0.1.2</Version>
-<AssemblyVersion>0.1.2.0</AssemblyVersion>
-<FileVersion>0.1.2.0</FileVersion>
+<Version>0.1.3</Version>
+<AssemblyVersion>0.1.3.0</AssemblyVersion>
+<FileVersion>0.1.3.0</FileVersion>
 ```
 
 `Build-Release.ps1` accepts `-Version` and overrides all three. A three-part
 version is expanded to four parts for the file/assembly attributes. Use semantic
 versioning and tag releases `v<version>`.
 
-## One-command build
+## Single-file release
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.2
+.\scripts\Build-SingleFile.ps1 -Version 0.1.3
 ```
 
 Output under `dist\`:
 
 ```text
 dist\
-├─ Stellary.PX-0.1.2-win-x64\
+├─ Stellary.PX-0.1.3-win-x64.exe
+└─ Stellary.PX-0.1.3-win-x64.exe.sha256
+```
+
+The executable is self-contained: no .NET Desktop Runtime install and no loose
+`UncapEngine.dll`, `branding.json`, or avatar. The payload is embedded in the
+assembly and extracted to `%APPDATA%\Stellary.PX\payload\<version>` before
+injection. The script builds the solution, runs the harness, publishes with
+`PublishSingleFile`, optionally signs, copies the exe to `dist\`, and writes the
+SHA-256 sidecar. This is the artifact the release workflow uploads.
+
+## Folder build (local review)
+
+```powershell
+.\scripts\Build-Release.ps1 -Version 0.1.3
+```
+
+Output under `dist\`:
+
+```text
+dist\
+├─ Stellary.PX-0.1.3-win-x64\
 │  ├─ Stellary.PX.exe
 │  ├─ Stellary.PX.dll
 │  ├─ Stellary.PX.deps.json
@@ -41,8 +63,8 @@ dist\
 │  ├─ screenshots\*.png
 │  ├─ scripts\Verify-Release.ps1, New-Checksums.ps1
 │  └─ SHA256SUMS.txt
-├─ Stellary.PX-0.1.2-win-x64.zip
-└─ Stellary.PX-0.1.2-win-x64.zip.sha256
+├─ Stellary.PX-0.1.3-win-x64.zip
+└─ Stellary.PX-0.1.3-win-x64.zip.sha256
 ```
 
 The command:
@@ -74,7 +96,7 @@ not a release signature and is not supported by the scripts.
 ### PFX file
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.2 `
+.\scripts\Build-SingleFile.ps1 -Version 0.1.3 `
   -Sign -Pfx .\secrets\codesign.pfx `
   -PfxPassword (Read-Host -AsSecureString)
 ```
@@ -91,7 +113,7 @@ Get-ChildItem Cert:\CurrentUser\My |
   Where-Object { $_.EnhancedKeyUsageList.ObjectId -contains '1.3.6.1.5.5.7.3.3' } |
   Format-List Subject, Thumbprint, NotAfter
 
-.\scripts\Build-Release.ps1 -Version 0.1.2 `
+.\scripts\Build-SingleFile.ps1 -Version 0.1.3 `
   -Sign -Thumbprint <SHA1-THUMBPRINT>
 ```
 
@@ -101,15 +123,17 @@ manufacturer middleware driver.
 ### Sign only (existing build)
 
 ```powershell
-.\scripts\Sign-Release.ps1 -Path .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe `
+.\scripts\Sign-Release.ps1 -Path .\dist\Stellary.PX-0.1.3-win-x64.exe `
   -Pfx .\secrets\codesign.pfx -PfxPassword (Read-Host -AsSecureString)
 
 # Re-hash after signing; signatures change the file bytes.
-.\scripts\New-Checksums.ps1 -Path .\dist\Stellary.PX-0.1.2-win-x64
+$hash = (Get-FileHash .\dist\Stellary.PX-0.1.3-win-x64.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+"$hash  Stellary.PX-0.1.3-win-x64.exe" |
+  Set-Content .\dist\Stellary.PX-0.1.3-win-x64.exe.sha256 -Encoding ascii
 ```
 
-If you sign after archiving, delete and rebuild the ZIP and its `.sha256`.
-Always sign **before** the final checksum and archive.
+If you sign after packaging, rebuild the sidecar. Always sign **before** the
+final checksum.
 
 ### Timestamping
 
@@ -126,24 +150,18 @@ untimestamped release.
 ## Verification
 
 ```powershell
-# Folder and manifest
-.\scripts\Verify-Release.ps1 `
-  -Path .\dist\Stellary.PX-0.1.2-win-x64 `
-  -Sums .\dist\Stellary.PX-0.1.2-win-x64\SHA256SUMS.txt
-
-# Single executable, requiring a valid signature
-.\scripts\Verify-Release.ps1 `
-  -Path .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe `
-  -Sums .\dist\Stellary.PX-0.1.2-win-x64\SHA256SUMS.txt `
-  -RequireSignature
+# Published single-file executable
+Get-FileHash .\dist\Stellary.PX-0.1.3-win-x64.exe -Algorithm SHA256
+Get-Content .\dist\Stellary.PX-0.1.3-win-x64.exe.sha256
 
 # Native check
-Get-AuthenticodeSignature .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe |
+Get-AuthenticodeSignature .\dist\Stellary.PX-0.1.3-win-x64.exe |
   Format-List Status, StatusMessage, SignerCertificate
 
-# Archive
-Get-FileHash .\dist\Stellary.PX-0.1.2-win-x64.zip -Algorithm SHA256
-Get-Content .\dist\Stellary.PX-0.1.2-win-x64.zip.sha256
+# Folder build (local review)
+.\scripts\Verify-Release.ps1 `
+  -Path .\dist\Stellary.PX-0.1.3-win-x64 `
+  -Sums .\dist\Stellary.PX-0.1.3-win-x64\SHA256SUMS.txt
 ```
 
 Unsigned builds report `NotSigned`. Release notes must say **unsigned** in that
@@ -156,27 +174,24 @@ a hash into prose as the only source of truth — the manifest is authoritative.
 2. Commit, tag, and push:
 
    ```powershell
-   git tag v0.1.2
-   git push origin v0.1.2
+   git tag v0.1.3
+   git push origin v0.1.3
    ```
 
 3. The `release` workflow builds the tagged commit and creates a **draft**
    GitHub release. It requires `docs/RELEASE-NOTES-<version>.md` and fails
    before building when the notes are missing. If `CERT_PFX_BASE64` and
    `CERT_PASSWORD` repository secrets exist, it decodes the PFX into the runner
-   temp directory, signs, verifies, hashes, and archives. If they do not exist,
-   it builds an explicitly unsigned release.
-4. The draft body is the versioned notes file, and these assets are attached
-   automatically:
+   temp directory, signs, verifies, and hashes. If they do not exist, it builds
+   an explicitly unsigned release.
+4. The draft body is the versioned notes file with the executable's SHA-256
+   appended, and one asset is attached:
 
-   - `Stellary.PX-<version>-win-x64.zip`
-   - `Stellary.PX-<version>-win-x64.zip.sha256`
-   - `SHA256SUMS.txt` (inside the ZIP and as a standalone asset)
-   - `RELEASE-NOTES-<version>.md`
+   - `Stellary.PX-<version>-win-x64.exe`
 
-5. Review the draft: download the ZIP, verify `SHA256SUMS.txt`, check the
-   signature status in the workflow log, and confirm the notes. Publish the
-   draft manually.
+5. Review the draft: download the exe, compare its SHA-256 with the value in the
+   body, check the signature status in the workflow log, and confirm the notes.
+   Publish the draft manually.
 6. State the signature status and signer subject in the release body.
 
 Tag pushes never publish a public release directly. The draft is the hand-off
@@ -206,18 +221,18 @@ Remove the PFX from the runner after the build. The workflow does this in a
 
 - [ ] Version bumped in csproj, changelog, and release notes.
 - [ ] `dotnet build -c Release` clean.
-- [ ] Safe harness: 18/18 pass.
-- [ ] `--system` harness: 21/21 pass on a controlled machine.
+- [ ] Safe harness: 23/23 pass.
+- [ ] `--system` harness: 26/26 pass on a controlled machine.
 - [ ] Launch boosted verified against a closed emulator; priority retained and
       the running action remains blocked and reported.
 - [ ] All six captures reviewed; log shows the matching `selected='<key>'`.
 - [ ] No new NuGet dependencies; `dotnet list package` shows none.
 - [ ] No secrets, PFX files, certificates, logs, or machine paths in the diff.
-- [ ] `Build-Release.ps1` produces the folder, manifest, ZIP, and ZIP hash.
-- [ ] `Verify-Release.ps1` passes for the folder and the exe.
+- [ ] `Build-SingleFile.ps1` produces the exe and its SHA-256 sidecar.
+- [ ] The executable starts and extracts the embedded payload.
 - [ ] Signature status and signer recorded in the release notes.
-- [ ] SHA-256 values match the published manifest.
-- [ ] Tag pushed; GitHub release assets uploaded.
+- [ ] SHA-256 values match the published executable.
+- [ ] Tag pushed; GitHub release has one asset: the exe.
 
 ## Rollback
 

@@ -45,20 +45,19 @@ public sealed class ShellViewModel : ObservableObject
         MachineHwid = IdentityService.Hwid();
 
         var avatarPath = Path.Combine(AppContext.BaseDirectory, Branding.AvatarFile.Replace('/', Path.DirectorySeparatorChar));
-        if (File.Exists(avatarPath))
+        try
         {
-            try
-            {
-                var bmp = new System.Windows.Media.Imaging.BitmapImage();
-                bmp.BeginInit();
-                bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                bmp.UriSource = new Uri(avatarPath);
-                bmp.EndInit();
-                bmp.Freeze();
-                _avatar = bmp;
-            }
-            catch { }
+            var bmp = new System.Windows.Media.Imaging.BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bmp.UriSource = File.Exists(avatarPath)
+                ? new Uri(avatarPath)
+                : new Uri("pack://application:,,,/assets/avatar.png");
+            bmp.EndInit();
+            bmp.Freeze();
+            _avatar = bmp;
         }
+        catch { }
 
         OpenLinkCommand = new RelayCommand(p =>
         {

@@ -14,8 +14,8 @@ namespace Stellary.PX.Services;
 /// </summary>
 public sealed class UncapService
 {
-    public const string DllName = "UncapEngine.dll";
-    public const string IniName = "UncapEngine.ini";
+    public const string DllName = PayloadStore.DllFileName;
+    public const string IniName = PayloadStore.IniFileName;
     public const int DefaultMultiplier = 2;
 
     /// <summary>sizeof(uncap::SharedMemory) from UncapTelemetry.h, Pack = 8.</summary>
@@ -29,8 +29,8 @@ public sealed class UncapService
     private const uint FlagArmed = 1u << 11;
     private const uint FlagHookMask = (1u << 0) | (1u << 1) | (1u << 7) | (1u << 8);
 
-    public static string DllPath => Path.Combine(AppContext.BaseDirectory, DllName);
-    public static string IniPath => Path.Combine(AppContext.BaseDirectory, IniName);
+    public static string DllPath => PayloadStore.DllPath;
+    public static string IniPath => PayloadStore.IniPath;
 
     public sealed record Telemetry(
         bool Valid,

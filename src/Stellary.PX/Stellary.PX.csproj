@@ -10,9 +10,9 @@
     <AssemblyName>Stellary.PX</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>assets\app.ico</ApplicationIcon>
-    <Version>0.1.2</Version>
-    <AssemblyVersion>0.1.2.0</AssemblyVersion>
-    <FileVersion>0.1.2.0</FileVersion>
+    <Version>0.1.3</Version>
+    <AssemblyVersion>0.1.3.0</AssemblyVersion>
+    <FileVersion>0.1.3.0</FileVersion>
     <Company>EskaProject-X</Company>
     <Product>Stellary.PX</Product>
     <Description>Emulator performance console — system tuning, visual presets, diagnostics.</Description>
@@ -24,18 +24,16 @@
   <ItemGroup>
     <Resource Include="assets\fonts\*.ttf" />
     <Resource Include="assets\logo.png" />
+    <Resource Include="assets\avatar.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="assets\avatar.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\native\UncapEngine_SDK\payload\UncapEngine.dll" Link="UncapEngine.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\native\UncapEngine_SDK\payload\UncapEngine.ini" Link="UncapEngine.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="..\..\native\UncapEngine_SDK\payload\UncapEngine.dll"
+                      LogicalName="Stellary.PX.Payload.UncapEngine.dll" />
+    <EmbeddedResource Include="..\..\native\UncapEngine_SDK\payload\UncapEngine.ini"
+                      LogicalName="Stellary.PX.Payload.UncapEngine.ini" />
+    <EmbeddedResource Include="branding.json"
+                      LogicalName="Stellary.PX.Payload.branding.json" />
   </ItemGroup>
 
   <ItemGroup>
