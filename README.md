@@ -1,7 +1,6 @@
 # Stellary.PX
 
 **A local-first Windows performance console for Android emulators.**  
-Black chrome, measured claims, reversible changes.
 
 ![Stellary.PX overview](screenshots/overview.png)
 
