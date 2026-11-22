@@ -7,7 +7,7 @@ SDK ini adalah modul **Uncap Engine & Fake FPS Patcher** yang diekstrak menjadi 
 ## 📁 Struktur Direktori SDK
 
 ```
-D:\INJECTOR\ECLYPSA\UncapEngine_SDK\
+D:\ProjectX\Stellary\UncapEngine_SDK\
 ├── SharedContract/
 │   └── UncapTelemetry.h        # Struktur memori bersama (Local\OptimaizerFps_<pid>)
 ├── UncapEngine_DLL/
