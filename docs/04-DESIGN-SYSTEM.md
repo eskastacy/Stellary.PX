@@ -1,4 +1,4 @@
-# 04 · Design system
+# 03 · Design system
 
 **Concept: Holy Tuff Black Chrome.** Cybersigilism reduced to material and
 engraving: near-black lacquer, brushed silver, thin ritual lines, and a single
