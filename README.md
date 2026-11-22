@@ -261,12 +261,11 @@ feature matrix.
 
 | Document | Contents |
 |---|---|
-| [01 · Reverse engineering](docs/01-REVERSE-ENGINEERING.md) | Binary profile, observed behavior, safety boundaries |
-| [02 · Feature map](docs/02-FEATURE-MAP.md) | Source capability → Stellary.PX implementation |
-| [03 · Architecture](docs/03-ARCHITECTURE.md) | Layers, services, data flow, threading |
-| [04 · Design system](docs/04-DESIGN-SYSTEM.md) | Palette, type, spacing, chrome, motion |
-| [05 · Test plan](docs/05-TEST-PLAN.md) | Harness, capture mode, manual matrix |
-| [06 · Release](docs/06-RELEASE.md) | Build, publish, checksums, signing |
+| [01 · Feature map](docs/02-FEATURE-MAP.md) | Source capability → Stellary.PX implementation |
+| [02 · Architecture](docs/03-ARCHITECTURE.md) | Layers, services, data flow, threading |
+| [03 · Design system](docs/04-DESIGN-SYSTEM.md) | Palette, type, spacing, chrome, motion |
+| [04 · Test plan](docs/05-TEST-PLAN.md) | Harness, capture mode, manual matrix |
+| [05 · Release](docs/06-RELEASE.md) | Build, publish, checksums, signing |
 | [Changelog](CHANGELOG.md) | Release history |
 | [Contributing](CONTRIBUTING.md) | Development workflow |
 | [Security](SECURITY.md) | Trust model and reporting |
