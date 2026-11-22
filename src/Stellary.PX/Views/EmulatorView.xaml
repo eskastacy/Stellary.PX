@@ -5,7 +5,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,6,0">
 
-            <TextBlock Text="Target acquisition, process privilege, cache hygiene, and driver repair for the Android emulator."
+            <TextBlock Text="Target acquisition, process privilege, cache hygiene, and frame uncapping for the Android emulator."
                        Style="{StaticResource T.Body}" Margin="2,0,0,14" />
 
             <!-- Target -->
@@ -58,16 +58,36 @@
 
                     <Grid Grid.Row="2" Margin="0,20,0,0">
                         <Border Style="{StaticResource Hairline}" Margin="0,0,0,16" />
-                        <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
-                            <Button Content="Boost priority" Style="{StaticResource PrimaryButton}"
-                                    Command="{Binding BoostCommand}" />
-                            <Button Content="Restore normal" Style="{StaticResource GhostButton}"
-                                    Command="{Binding RestorePriorityCommand}" Margin="8,0,0,0" />
+                        <StackPanel Margin="0,18,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Boost priority" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding BoostCommand}"
+                                        ToolTip="Sets AboveNormal, boosts the CPU clock, and arms the 2× FPS overlay in one step." />
+                                <Button Content="Launch boosted" Style="{StaticResource GhostButton}"
+                                        Command="{Binding LaunchBoostedCommand}" IsEnabled="{Binding CanLaunch}"
+                                        ToolTip="Start HD-Player at AboveNormal. Available only while BlueStacks is closed."
+                                        Margin="8,0,0,0" />
+                                <Button Content="Restore normal" Style="{StaticResource GhostButton}"
+                                        Command="{Binding RestorePriorityCommand}"
+                                        ToolTip="Returns priority, CPU plan, and frame pacing to stock."
+                                        Margin="8,0,0,0" />
+                            </StackPanel>
                             <TextBlock Text="{Binding Status}" Style="{StaticResource T.Small}"
-                                       VerticalAlignment="Center" Margin="16,0,0,0" />
+                                       TextWrapping="Wrap" Margin="0,9,0,0" />
                         </StackPanel>
                     </Grid>
                 </Grid>
+            </Border>
+
+            <!-- Uncap engine -->
+            <Border Style="{StaticResource Card}" Padding="22,18" Margin="0,14,0,0">
+                <StackPanel>
+                    <TextBlock Text="UNCAPPED FRAME PACING" Style="{StaticResource T.Eyebrow}" />
+                    <TextBlock Text="{Binding UncapStatus}" FontFamily="{StaticResource F.Light}" FontSize="22"
+                               Foreground="{StaticResource B.Text}" Margin="0,7,0,4" />
+                    <TextBlock Style="{StaticResource T.Small}" TextWrapping="Wrap"
+                               Text="Armed by Boost priority: UncapEngine.dll loads through a thread message hook — no process handles and no driver change. The engine forces the present interval to zero, counts the real presents, and keeps the native BlueStacks FPS writer at exactly 2× the current rate — so the counter rises and falls with the emulator instead of freezing on one value. Restore normal ejects the engine and puts the original instructions back. Requires an elevated session." />
+                </StackPanel>
             </Border>
 
             <Grid Margin="0,14,0,0">
@@ -83,10 +103,13 @@
                         <TextBlock Text="PROCESS PRIVILEGE" Style="{StaticResource T.Eyebrow}" />
                         <TextBlock Text="{Binding Priority}" FontFamily="{StaticResource F.Light}" FontSize="22"
                                    Foreground="{StaticResource B.Text}" Margin="0,7,0,4" />
-                        <TextBlock Style="{StaticResource T.Small}"
-                                   Text="Above-normal scheduling gives the emulator more CPU time while the desktop stays responsive. BlueStacks 5.22 can deny priority changes; the app reports the block instead of bypassing it." />
+                        <TextBlock Style="{StaticResource T.Small}" TextWrapping="Wrap"
+                                   Text="Above-normal scheduling gives the emulator more CPU time while the desktop stays responsive. A direct handle is tried first; when BlueStacks denies it, the injected engine sets the class from inside the process on the same click." />
                         <Border Style="{StaticResource Hairline}" Margin="0,12" />
-                        <TextBlock Text="Applies to HD-Player.exe automatically on pipeline start." Style="{StaticResource T.Small}" />
+                        <TextBlock Style="{StaticResource T.Small}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Text="Launch boosted starts a closed BlueStacks at AboveNormal before emulator protection applies. Close the emulator to enable it." />
+                        <TextBlock Style="{StaticResource T.Small}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Text="Boost priority also switches Windows to the Ultimate Performance plan so the CPU holds its boost clock, and writes the active instance's high-FPS config: max_fps 240, high FPS on, vsync off in bluestacks.conf (backup kept). The emulator applies the config on the next start." />
                     </StackPanel>
                 </Border>
 
@@ -133,12 +156,9 @@
                     <Grid Grid.Row="0">
                         <StackPanel>
                             <TextBlock Text="DRIVER INTEGRITY" Style="{StaticResource T.Eyebrow}" />
-                            <TextBlock Text="BlueStacks 5.22 driver repair" FontFamily="{StaticResource F.Medium}"
+                            <TextBlock Text="Stock driver · nxt / msi5" FontFamily="{StaticResource F.Medium}"
                                        FontSize="15" Foreground="{StaticResource B.Text}" Margin="0,6,0,0" />
                         </StackPanel>
-                        <Button Content="Replace from file…" Style="{StaticResource GhostButton}"
-                                HorizontalAlignment="Right" VerticalAlignment="Top"
-                                Command="{Binding ReplaceDriverCommand}" />
                     </Grid>
 
                     <Grid Grid.Row="1" Margin="0,18,0,0">
@@ -203,7 +223,7 @@
                     </ItemsControl>
 
                     <TextBlock Grid.Row="3" Style="{StaticResource T.Small}" Margin="0,12,0,0"
-                               Text="Only Authenticode-trusted .sys files are accepted. The current driver is backed up to ProgramData\Stellary.PX\backup before replacement. Close the emulator first." />
+                               Text="Read-only inventory of the driver already installed by BlueStacks or MSI. Stellary.PX works with the stock driver: nothing is downloaded, replaced, staged, or rebooted. Signature state is shown above." />
                 </Grid>
             </Border>
         </StackPanel>

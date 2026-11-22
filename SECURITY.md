@@ -35,9 +35,9 @@ the security model is built around explicit, reversible actions:
   modification and restored on request.
 - **Process-scoped timer.** `NtSetTimerResolution` requests end with the process;
   the app also releases explicitly on exit.
-- **No network mutation.** The app does not download drivers, updates, presets,
-  or licenses. External links open in the default browser after an explicit
-  click and must be absolute HTTP/HTTPS URIs.
+- **No network mutation.** The app downloads nothing: no driver payloads, no
+  updates, no presets, no licenses. External links open in the default browser
+  after an explicit click and must be absolute HTTP/HTTPS URIs.
 - **No anti-analysis.** Instrumentation detection is read-only. The app does not
   terminate other processes, hide itself, block debuggers, or tamper with
   security tooling.
@@ -50,16 +50,27 @@ the security model is built around explicit, reversible actions:
 - **Unsigned community builds.** If no certificate is configured, releases are
   unsigned. Verify them with `SHA256SUMS.txt` and build from source if you need
   stronger provenance. An unsigned build is never presented as signed.
-- **Driver replacement is powerful.** Only Authenticode-trusted `.sys` files are
-  accepted, the previous driver is backed up, and the copy is hash-verified.
-  A malicious signed driver remains a supply-chain risk outside this app's
-  control. Prefer vendor-signed drivers from the emulator installation.
-- **Elevation.** Power-scheme changes and driver repair require administrator
+- **The kernel driver is never touched.** Stellary.PX reads version, SHA-256,
+  and Authenticode state from the installed `BstkDrv_*.sys` and leaves the image
+  alone. There is no download, backup, replacement, staging, or pending rename.
+- **Uncap injection is scoped.** The payload is loaded only into the detected
+  emulator process, only after the explicit **Boost priority** action, using a
+  thread-scoped Windows hook (`SetWindowsHookEx` + `WM_NULL`) rather than
+  process-handle APIs. The payload pins itself, publishes telemetry through a
+  local mapping, and stays resident until the emulator exits. **Restore normal**
+  restores hooks and the patched FPS writer.
+- **Elevation.** Power-scheme changes and uncap injection require administrator
   rights. The app does not request elevation silently; the Settings page offers
   an explicit restart.
 - **Third-party emulator.** BlueStacks and MSI App Player may change process
   names, install paths, driver names, or cache layouts. Detection failures are
   reported, not worked around with invasive techniques.
+- **Launch-time scheduling is not a bypass.** **Launch boosted** starts a
+  closed BlueStacks through the standard Windows `start /abovenormal` command.
+  It cannot change an existing protected process, does not install a driver,
+  does not duplicate or steal handles, and does not inject code. BlueStacks
+  still owns and protects its process after launch. The separate uncap payload
+  attaches only on its own explicit action.
 - **Protected emulator processes.** BlueStacks 5.22 denies
   `PROCESS_SET_INFORMATION` to external processes, including elevated
   administrators; `SeDebugPrivilege` does not change that. Priority and path

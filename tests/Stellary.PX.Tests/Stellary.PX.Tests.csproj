@@ -8,13 +8,22 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Stellary.PX.Tests</RootNamespace>
     <AssemblyName>Stellary.PX.Tests</AssemblyName>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Company>EskaProject-X</Company>
     <Product>Stellary.PX test harness</Product>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Stellary.PX\Stellary.PX.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\native\UncapEngine_SDK\payload\UncapEngine.dll" Link="UncapEngine.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\native\UncapEngine_SDK\payload\UncapEngine.ini" Link="UncapEngine.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

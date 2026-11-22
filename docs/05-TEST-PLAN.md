@@ -21,7 +21,7 @@ package references; a restore should not introduce third-party binaries.
 dotnet run --project tests\Stellary.PX.Tests -c Release
 ```
 
-Expected: `passed 17 | failed 0 | skipped 3`.
+Expected: `passed 18 | failed 0 | skipped 3`.
 
 Read-only coverage:
 
@@ -40,6 +40,7 @@ Read-only coverage:
 | Process probe | Limited-query path and priority reads work on real processes |
 | Machine fingerprint | Stable, formatted, not the raw MachineGuid |
 | Emulator detection | Process/install integrity without mutation |
+| Launch target resolution | Resolves an existing `HD-Player.exe` without launching it |
 | Cache measurement | Scoped scan returns sane counts |
 | Driver inventory | Full SHA-256 and Authenticode state |
 | Instrumentation scan | Read-only process listing |
@@ -51,7 +52,7 @@ Read-only coverage:
 dotnet run --project tests\Stellary.PX.Tests -c Release -- --system --verbose
 ```
 
-Expected: `passed 20 | failed 0 | skipped 0`.
+Expected: `passed 21 | failed 0 | skipped 0`.
 
 | Check | Mutation | Restore |
 |---|---|---|
@@ -130,8 +131,10 @@ MSI App Player 5 where available.
 
 | Scenario | Expected |
 |---|---|
-| Emulator not running | Standby, `no active process`, no priority mutation |
-| Emulator running | PID shown, Boost available, priority reads current class |
+| Emulator not running | Standby, `no active process`, no priority mutation; Launch boosted enabled |
+| Emulator running | PID shown, Boost available, priority reads current class; Launch boosted disabled |
+| Launch boosted, emulator closed | `HD-Player.exe` starts and retains `AboveNormal`; status reports the observed class |
+| Launch boosted, launch fails | Clear failure detail; no priority or process mutation claimed |
 | Emulator path denied to normal APIs | Path still resolved via limited query; page shows the real path |
 | Emulator denies priority change | `Blocked by emulator protection`; stage excluded from applied count; headline `Pipeline partially engaged` |
 | Boost then restore | Priority returns to the prior class |
@@ -172,9 +175,9 @@ MSI App Player 5 where available.
 ## 6 · Release verification
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.1
-.\scripts\Verify-Release.ps1 -Path .\dist\Stellary.PX-0.1.1-win-x64\Stellary.PX.exe `
-  -Sums .\dist\Stellary.PX-0.1.1-win-x64\SHA256SUMS.txt
+.\scripts\Build-Release.ps1 -Version 0.1.2
+.\scripts\Verify-Release.ps1 -Path .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe `
+  -Sums .\dist\Stellary.PX-0.1.2-win-x64\SHA256SUMS.txt
 ```
 
 If signed:

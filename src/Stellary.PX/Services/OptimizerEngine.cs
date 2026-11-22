@@ -16,6 +16,7 @@ public sealed class OptimizerEngine
     public CacheService Cache { get; } = new();
     public DriverService Drivers { get; } = new();
     public ToolScanService Tools { get; } = new();
+    public UncapService Uncap { get; } = new();
 
     public OptimizerEngine(SettingsService settings) => Settings = settings;
 

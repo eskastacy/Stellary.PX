@@ -5,7 +5,8 @@ Black chrome, measured claims, reversible changes.
 
 ![Stellary.PX overview](screenshots/overview.png)
 
-Stellary.PX is an independent, emulator discovery, process priority, Windows timer
+Stellary.PX is an independent, clean-room implementation of emulator optimization
+techniques: emulator discovery, process priority, Windows timer
 resolution, Ultimate Performance power schemes, GameDVR/FSE registry behavior,
 QML cache hygiene, BlueStacks driver inspection, visual preset compilation, and
 diagnostics. The interface is original. No code, assets, license logic, or
@@ -24,16 +25,37 @@ restores what can be restored. Every row names the mechanism it uses
 ### Emulator
 - Detects `HD-Player.exe` and classifies BlueStacks 5 vs. MSI App Player 5, even
   when the emulator blocks path access to the normal process APIs.
-- Boosts the running emulator to `AboveNormal` and restores the prior class when
-  the target permits it. BlueStacks 5.22 denies priority changes; the app reports
-  `Blocked by emulator protection` instead of bypassing the protection.
+- **Launch boosted** starts a closed emulator at `AboveNormal` before BlueStacks
+  applies its runtime protection. This is launch-time scheduling, not a bypass;
+  the button is disabled while the target is running.
+- Boosts the running emulator to `AboveNormal`. A direct `SetPriorityClass` is
+  tried first; when BlueStacks denies the handle, the injected engine sets the
+  class from inside the process on the same click.
+- **Boost priority** switches Windows to the Ultimate Performance plan so the CPU
+  holds its boost clock, arms the 2× FPS overlay, and writes the active
+  instance's high-FPS config (`max_fps=240`, high FPS on, vsync off) to
+  `bluestacks.conf` with a timestamped backup; the emulator applies the config
+  on the next start.
 - Measures and clears compiled QML caches only; application data and games are
   preserved.
-- Inventories BlueStacks kernel drivers with file version, full SHA-256, and
-  Authenticode trust state.
-- Repairs a driver **from a user-supplied, Authenticode-trusted `.sys` file**,
-  backs up the existing driver, and verifies the copied hash. It never downloads
-  a driver.
+- Inventories the installed BlueStacks kernel drivers with file version, full
+  SHA-256, and Authenticode trust state. The inventory is read-only: the stock
+  driver stays in place.
+- **Boost priority** also loads `UncapEngine.dll` through a thread message hook,
+  so it needs no process handles and works with the stock protected driver. The
+  engine forces the present interval to zero and replaces the native BlueStacks
+  FPS counter store with a jump to a code cave. The cave multiplies the measured
+  rate in `r8d` by **2** (configurable in `UncapEngine.ini`), stores the result,
+  and jumps back — BlueStacks renders `r8d`, so the displayed FPS rises and
+  falls with the emulator instead of freezing on one baseline. Re-arming
+  restores the store and reinstalls the cave with the current factor, so
+  repeated clicks never compound the multiplier. Live code is rewritten only
+  with the other threads suspended; **Restore normal** ejects the engine,
+  restores the original instructions, and returns priority and the power plan to
+  stock without unloading the module.
+- Live telemetry from the injected module: frame rate, average/p95 frame time,
+  flags, and the visual-patch state. Injected state is read from shared memory
+  because the protected process hides its module list.
 
 ### System tuning
 - Queries the active power scheme, activates Ultimate Performance (duplicating
@@ -83,14 +105,18 @@ restores what can be restored. Every row names the mechanism it uses
 
 Stellary.PX is deliberately boring about trust:
 
-- **No remote driver downloads.** Driver repair accepts a local, signed `.sys`
-  file and validates its Authenticode chain before replacing anything.
+- **Stock driver only.** The app never downloads, replaces, stages, or downgrades
+  a kernel driver. Driver rows are read-only evidence.
+- **Injection is scoped.** The uncap payload is loaded only into the emulator the
+  page has detected, through a thread-scoped Windows hook, and only after an
+  explicit **Boost priority** click in an elevated session.
 - **No license server, HWID check-in, or key enforcement.** This community build
   has no activation gate and makes no license requests.
 - **No anti-analysis behavior.** The instrumentation scan reports processes; it
   never terminates them, hides the app, or blocks debugging.
 - **No obfuscation or packing.** The managed assembly is inspectable.
-- **No telemetry.** The only outbound requests are links you explicitly open.
+- **No telemetry.** The app makes no outbound requests; links open only when you
+  click them.
 - **No silent persistence.** Registry and power changes are user-initiated,
   captured first, and restorable from the same screen. Timer requests are
   process-scoped and released on exit.
@@ -107,7 +133,7 @@ Details: [SECURITY.md](SECURITY.md).
 - Windows 10 1903+ or Windows 11, x64.
 - [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
   (framework-dependent build).
-- Administrator elevation for power-scheme changes and driver repair.
+- Administrator elevation for power-scheme changes and uncap injection.
 - BlueStacks 5 or MSI App Player 5 for emulator-specific features. The rest of
   the console works without it.
 
@@ -161,8 +187,20 @@ The release helper performs a clean publish, writes `SHA256SUMS.txt`, and
 produces a versioned ZIP:
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.1
+.\scripts\Build-Release.ps1 -Version 0.1.2
 ```
+
+The managed build ships the prebuilt
+`native\UncapEngine_SDK\payload\UncapEngine.dll`. Rebuild it after changing the
+native source:
+
+```powershell
+cd native\UncapEngine_SDK\UncapEngine_DLL
+.\build_dll.bat
+```
+
+`build_dll.bat` uses Visual Studio 2022 when `vcvars64.bat` is present and falls
+back to `g++` (WinLibs/MinGW-w64) otherwise.
 
 Signing requires `signtool.exe` and a CA-issued certificate:
 
@@ -184,8 +222,8 @@ The service harness has no external dependencies:
 dotnet run --project tests\Stellary.PX.Tests -c Release
 ```
 
-The default pass is read-only (17 checks). Add `--system` to exercise the
-reversible timer, power-plan, and registry round-trips (20 checks). The harness
+The default pass is read-only (18 checks). Add `--system` to exercise the
+reversible timer, power-plan, and registry round-trips (21 checks). The harness
 captures and restores real state, then prints `passed / failed / skipped`.
 
 UI verification uses the deterministic capture mode:
@@ -252,5 +290,5 @@ All links are configured in one place: `src/Stellary.PX/branding.json`.
 MIT. See [LICENSE](LICENSE).
 
 Stellary.PX is an independent project. It is not affiliated with BlueStacks,
-MSI, Microsoft. BlueStacks and MSI App Player
+MSI, Microsoft, or any third-party optimizer vendor. BlueStacks and MSI App Player
 are trademarks of their respective owners.

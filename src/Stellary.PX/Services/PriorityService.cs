@@ -33,7 +33,7 @@ public sealed class PriorityService
 
     private static string Explain(int error) => error switch
     {
-        5 => "Blocked by emulator protection",
+        5 => "Direct handle denied · engine path unavailable",
         87 => "Target closed",
         1168 => "Target closed",
         -1 => "Priority probe failed",

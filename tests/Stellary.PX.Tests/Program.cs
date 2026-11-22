@@ -53,8 +53,14 @@ internal static class Program
         Run("process probe", ProcessProbe);
         Run("machine fingerprint is stable and opaque", MachineFingerprint);
         Run("emulator detection", EmulatorDetection);
+        Run("launch target resolution", LaunchTargetResolution);
         Run("QML cache measurement", CacheMeasurement);
         Run("driver inventory", DriverInventory);
+        Run("high FPS config parse", HighFpsConfigParse);
+        Run("uncap telemetry contract", UncapTelemetryContract);
+        Run("uncap payload exports", UncapPayloadExports);
+        Run("uncap payload hook gadget", UncapPayloadGadget);
+        Run("uncap config write", UncapConfigWrite);
         Run("instrumentation scan", ToolScan);
         Run("step result semantics", StepSemantics);
 
@@ -279,6 +285,25 @@ internal static class Program
             Assert(Directory.Exists(target.InstallDirectory), "install dir missing: " + target.InstallDirectory);
     }
 
+    private static void LaunchTargetResolution()
+    {
+        var candidate = EmulatorService.LaunchCandidate();
+        var target = new EmulatorService().Detect();
+        if (candidate is null)
+        {
+            // No executable is a valid state; the action must stay unavailable rather than guess.
+            Assert(target.InstallDirectory is null ||
+                   !File.Exists(Path.Combine(target.InstallDirectory, "HD-Player.exe")),
+                "launch candidate not found in detected install");
+            return;
+        }
+
+        Assert(File.Exists(candidate), "launch candidate missing: " + candidate);
+        AssertEqual("HD-Player.exe", Path.GetFileName(candidate), "launch candidate name");
+        Assert(candidate.EndsWith(Path.Combine("", "HD-Player.exe")), "launch candidate suffix");
+        Assert(!string.IsNullOrWhiteSpace(target.InstallDirectory), "install root for launch target");
+    }
+
     private static void CacheMeasurement()
     {
         var report = new CacheService().Measure();
@@ -305,6 +330,73 @@ internal static class Program
             {
                 AssertEqual("—", driver.Sha256, "missing hash");
             }
+        }
+    }
+
+    private static void HighFpsConfigParse()
+    {
+        const string sample =
+            "bst.instance.Pie64.max_fps=\"60\"\n" +
+            "bst.instance.Pie64.enable_high_fps=\"0\"\n" +
+            "bst.instance.Pie64.enable_vsync=\"1\"\n" +
+            "bst.instance.Pie64.status.session_id=\"7\"\n";
+        var state = EmulatorService.ParseHighFps(sample);
+        Assert(state is not null, "state missing");
+        if (state is null) return;
+        AssertEqual("Pie64", state.Instance, "instance");
+        AssertEqual(60, state.MaxFps, "max fps");
+        Assert(!state.HighFps, "high fps should be off");
+        Assert(!state.VsyncOff, "vsync should be on");
+
+        var uncapped = EmulatorService.ParseHighFps(
+            "bst.instance.Rvc64.max_fps=\"240\"\n" +
+            "bst.instance.Rvc64.enable_high_fps=\"1\"\n" +
+            "bst.instance.Rvc64.enable_vsync=\"0\"\n");
+        Assert(uncapped is not null && uncapped.Instance == "Rvc64" && uncapped.MaxFps == 240 &&
+               uncapped.HighFps && uncapped.VsyncOff, "uncapped state");
+    }
+
+    private static void UncapTelemetryContract()
+    {
+        AssertEqual(2168, UncapService.SharedMemorySize, "SharedMemory size");
+        AssertEqual("UncapEngine.dll", UncapService.DllName, "payload name");
+
+        var service = new UncapService();
+        Assert(!service.IsInjected(0), "pid 0 cannot be injected");
+        Assert(!service.ReadTelemetry(0).Valid, "pid 0 has no telemetry");
+    }
+
+    private static void UncapPayloadExports()
+    {
+        Assert(File.Exists(UncapService.DllPath), "payload not copied to test output");
+        Assert(UncapService.ExportRva(UncapService.DllPath, "OptimaizerUnhook") is not null, "unhook export missing");
+        Assert(UncapService.ExportRva(UncapService.DllPath, "OptimaizerHook") is not null, "hook export missing");
+        Assert(UncapService.ExportRva(UncapService.DllPath, "OptimaizerSetPriority") is not null, "priority export missing");
+    }
+
+    private static void UncapPayloadGadget()
+    {
+        Assert(File.Exists(UncapService.DllPath), "payload not copied to test output");
+        Assert(UncapService.GadgetRva(UncapService.DllPath) is not null, "xor/ret hook gadget missing");
+    }
+
+    private static void UncapConfigWrite()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "stellary-uncap-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var ini = Path.Combine(dir, UncapService.IniName);
+            Assert(UncapService.WriteConfig(ini, 2), "config write failed");
+            var text = File.ReadAllText(ini);
+            Assert(text.Contains("Multiplier=2", StringComparison.Ordinal), "multiplier missing: " + text);
+            Assert(!text.Contains("Target=", StringComparison.Ordinal), "stale fixed target present: " + text);
+            Assert(text.Contains("Enabled=1", StringComparison.Ordinal), "enabled missing");
+            Assert(text.Contains("Jitter=1", StringComparison.Ordinal), "jitter missing");
+        }
+        finally
+        {
+            try { Directory.Delete(dir, true); } catch { }
         }
     }
 

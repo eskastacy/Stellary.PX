@@ -48,17 +48,9 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Grid Width="36" Height="36" VerticalAlignment="Center">
-                            <Path Data="M18 1.5 L33.6 10.2 V27.8 L18 36.5 L2.4 27.8 V10.2 Z"
-                                  Stroke="{StaticResource B.Chrome}" StrokeThickness="1.1" Fill="Transparent"
-                                  StrokeLineJoin="Round" />
-                            <Path Data="M18 7.4 L28.6 13.7 V25.3 L18 31.6 L7.4 25.3 V13.7 Z"
-                                  Stroke="#33333D" StrokeThickness="0.9" Fill="Transparent"
-                                  StrokeLineJoin="Round" />
-                            <Path Data="M23.2 14.6c-1.2-1.3-2.9-2-4.8-2-2.6 0-4.5 1.4-4.5 3.4 0 1.9 1.5 2.8 4.3 3.4 2.9.6 4.5 1.6 4.5 3.8 0 2.4-2.1 4-5.2 4-2.2 0-4.1-.7-5.3-2.1"
-                                  Stroke="{StaticResource B.Chrome}" StrokeThickness="1.5" Fill="Transparent"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                        </Grid>
+                        <Image Width="38" Height="38" VerticalAlignment="Center"
+                               Source="/assets/logo.png" Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="9,2,0,0">
                             <TextBlock Foreground="{StaticResource B.Chrome}">

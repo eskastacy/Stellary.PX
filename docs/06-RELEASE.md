@@ -10,9 +10,9 @@ fails unless `Get-AuthenticodeSignature` reports `Valid`.
 The version lives in `src/Stellary.PX/Stellary.PX.csproj`:
 
 ```xml
-<Version>0.1.1</Version>
-<AssemblyVersion>0.1.1.0</AssemblyVersion>
-<FileVersion>0.1.1.0</FileVersion>
+<Version>0.1.2</Version>
+<AssemblyVersion>0.1.2.0</AssemblyVersion>
+<FileVersion>0.1.2.0</FileVersion>
 ```
 
 `Build-Release.ps1` accepts `-Version` and overrides all three. A three-part
@@ -22,14 +22,14 @@ versioning and tag releases `v<version>`.
 ## One-command build
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.1
+.\scripts\Build-Release.ps1 -Version 0.1.2
 ```
 
 Output under `dist\`:
 
 ```text
 dist\
-├─ Stellary.PX-0.1.1-win-x64\
+├─ Stellary.PX-0.1.2-win-x64\
 │  ├─ Stellary.PX.exe
 │  ├─ Stellary.PX.dll
 │  ├─ Stellary.PX.deps.json
@@ -41,8 +41,8 @@ dist\
 │  ├─ screenshots\*.png
 │  ├─ scripts\Verify-Release.ps1, New-Checksums.ps1
 │  └─ SHA256SUMS.txt
-├─ Stellary.PX-0.1.1-win-x64.zip
-└─ Stellary.PX-0.1.1-win-x64.zip.sha256
+├─ Stellary.PX-0.1.2-win-x64.zip
+└─ Stellary.PX-0.1.2-win-x64.zip.sha256
 ```
 
 The command:
@@ -74,7 +74,7 @@ not a release signature and is not supported by the scripts.
 ### PFX file
 
 ```powershell
-.\scripts\Build-Release.ps1 -Version 0.1.1 `
+.\scripts\Build-Release.ps1 -Version 0.1.2 `
   -Sign -Pfx .\secrets\codesign.pfx `
   -PfxPassword (Read-Host -AsSecureString)
 ```
@@ -91,7 +91,7 @@ Get-ChildItem Cert:\CurrentUser\My |
   Where-Object { $_.EnhancedKeyUsageList.ObjectId -contains '1.3.6.1.5.5.7.3.3' } |
   Format-List Subject, Thumbprint, NotAfter
 
-.\scripts\Build-Release.ps1 -Version 0.1.1 `
+.\scripts\Build-Release.ps1 -Version 0.1.2 `
   -Sign -Thumbprint <SHA1-THUMBPRINT>
 ```
 
@@ -101,11 +101,11 @@ manufacturer middleware driver.
 ### Sign only (existing build)
 
 ```powershell
-.\scripts\Sign-Release.ps1 -Path .\dist\Stellary.PX-0.1.1-win-x64\Stellary.PX.exe `
+.\scripts\Sign-Release.ps1 -Path .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe `
   -Pfx .\secrets\codesign.pfx -PfxPassword (Read-Host -AsSecureString)
 
 # Re-hash after signing; signatures change the file bytes.
-.\scripts\New-Checksums.ps1 -Path .\dist\Stellary.PX-0.1.1-win-x64
+.\scripts\New-Checksums.ps1 -Path .\dist\Stellary.PX-0.1.2-win-x64
 ```
 
 If you sign after archiving, delete and rebuild the ZIP and its `.sha256`.
@@ -128,22 +128,22 @@ untimestamped release.
 ```powershell
 # Folder and manifest
 .\scripts\Verify-Release.ps1 `
-  -Path .\dist\Stellary.PX-0.1.1-win-x64 `
-  -Sums .\dist\Stellary.PX-0.1.1-win-x64\SHA256SUMS.txt
+  -Path .\dist\Stellary.PX-0.1.2-win-x64 `
+  -Sums .\dist\Stellary.PX-0.1.2-win-x64\SHA256SUMS.txt
 
 # Single executable, requiring a valid signature
 .\scripts\Verify-Release.ps1 `
-  -Path .\dist\Stellary.PX-0.1.1-win-x64\Stellary.PX.exe `
-  -Sums .\dist\Stellary.PX-0.1.1-win-x64\SHA256SUMS.txt `
+  -Path .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe `
+  -Sums .\dist\Stellary.PX-0.1.2-win-x64\SHA256SUMS.txt `
   -RequireSignature
 
 # Native check
-Get-AuthenticodeSignature .\dist\Stellary.PX-0.1.1-win-x64\Stellary.PX.exe |
+Get-AuthenticodeSignature .\dist\Stellary.PX-0.1.2-win-x64\Stellary.PX.exe |
   Format-List Status, StatusMessage, SignerCertificate
 
 # Archive
-Get-FileHash .\dist\Stellary.PX-0.1.1-win-x64.zip -Algorithm SHA256
-Get-Content .\dist\Stellary.PX-0.1.1-win-x64.zip.sha256
+Get-FileHash .\dist\Stellary.PX-0.1.2-win-x64.zip -Algorithm SHA256
+Get-Content .\dist\Stellary.PX-0.1.2-win-x64.zip.sha256
 ```
 
 Unsigned builds report `NotSigned`. Release notes must say **unsigned** in that
@@ -156,8 +156,8 @@ a hash into prose as the only source of truth — the manifest is authoritative.
 2. Commit, tag, and push:
 
    ```powershell
-   git tag v0.1.1
-   git push origin v0.1.1
+   git tag v0.1.2
+   git push origin v0.1.2
    ```
 
 3. The `release` workflow builds the tagged commit and creates a **draft**
@@ -206,8 +206,10 @@ Remove the PFX from the runner after the build. The workflow does this in a
 
 - [ ] Version bumped in csproj, changelog, and release notes.
 - [ ] `dotnet build -c Release` clean.
-- [ ] Safe harness: 17/17 pass.
-- [ ] `--system` harness: 20/20 pass on a controlled machine.
+- [ ] Safe harness: 18/18 pass.
+- [ ] `--system` harness: 21/21 pass on a controlled machine.
+- [ ] Launch boosted verified against a closed emulator; priority retained and
+      the running action remains blocked and reported.
 - [ ] All six captures reviewed; log shows the matching `selected='<key>'`.
 - [ ] No new NuGet dependencies; `dotnet list package` shows none.
 - [ ] No secrets, PFX files, certificates, logs, or machine paths in the diff.

@@ -4,6 +4,106 @@ All notable changes to Stellary.PX are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Boost priority** on the Emulator page loads `UncapEngine.dll` into the
+  running player through a thread-scoped `WH_GETMESSAGE` hook and an in-module
+  `xor eax, eax; ret` gadget. The loader needs no `OpenProcess`, remote
+  allocation, or remote thread, so it works with the stock protected driver.
+- **Boost priority** also switches Windows to the Ultimate Performance plan so
+  the CPU holds its boost clock; the previous scheme GUID is captured for
+  **Restore normal**.
+- **Restore normal** calls `OptimaizerUnhook` through a `WH_CALLWNDPROC` hook and
+  returns the power plan; the next **Boost priority** re-arms through
+  `OptimaizerHook`. Injected state is read from the
+  `Local\OptimaizerFps_<pid>` telemetry mapping instead of the hidden module
+  list.
+- New `uncap payload exports` and `uncap payload hook gadget` harness checks.
+- `OptimaizerSetPriority` export: the injected engine sets its own process class
+  from inside the target when BlueStacks denies the outside handle. **Boost
+  priority** and **Restore normal** both fall back to it.
+- **Boost priority** also writes the active BlueStacks/MSI instance's high-FPS
+  settings (`max_fps=240`, `enable_high_fps=1`, `enable_vsync=0`) to
+  `bluestacks.conf` with a timestamped backup. The emulator applies them on the
+  next start; an already-uncapped instance is reported and left untouched.
+- The sidebar developer profile now ships with the developer portrait avatar
+  (`assets/avatar.png`), cropped square for the circular badge.
+
+### Changed
+
+- The separate **Uncap FPS** and **Eject uncap** buttons are gone. **Boost
+  priority** is the single arming action — priority, CPU clock, injection, and
+  the high-FPS config in one click — and **Restore normal** is the single eject.
+- The FPS overlay now shows **2x the live real FPS** instead of a fixed 1000.
+  The 7-byte counter store is replaced with a jump to a code cave that multiplies
+  `r8d` by the configured factor and stores the result. BlueStacks renders
+  `r8d`, so the displayed value is derived from the rate it just measured — it
+  rises and falls with the emulator (`Multiplier=` in `UncapEngine.ini`,
+  default 2).
+- The cave preserves flags for the conditional jump after the store and stores
+  the same multiplied value the overlay renders, so the counter and the overlay
+  always agree.
+- Updating the overlay is the emulator's own store; the worker only mirrors the
+  value for telemetry.
+- Re-arming through `OptimaizerHook` restores the store and reinstalls the cave
+  with the current factor. Repeated clicks no longer compound 200 → 400 → 800.
+- `OptimaizerHook` only queues the re-arm; module scanning and hook installation
+  run on the payload's worker thread instead of the emulator UI thread.
+- The driver card is now a read-only inventory. The driver download, service
+  stop/start, backup, copy, and boot-time rename paths are removed; the stock
+  driver is never replaced or downgraded.
+- The uncap engine now decodes hook prologues exactly, follows export thunks,
+  and refuses prologues it cannot relocate. The previous length decoder missed
+  immediate bytes and could build a corrupt OpenGL trampoline.
+
+### Fixed
+
+- The 7-byte FPS store and every inline hook prologue are now rewritten while
+  all other threads in the process are suspended. A render thread can no longer
+  fetch a half-written instruction, which was the freeze/crash path.
+- The overlay immediate is written once per patch instead of being rewritten
+  from the worker every 60 ms, removing a second cross-thread code write.
+- Restore verifies that the recorded bytes are still the patch before writing;
+  after a renderer restart the stale address is dropped and rescanned.
+- Hook removal no longer frees a trampoline that a suspended thread may still be
+  executing, and a failed `VirtualProtect` no longer marks the hook removed.
+- Loading the payload no longer relies on `CreateToolhelp32Snapshot` module
+  enumeration, which returns nothing for a protected `HD-Player.exe`.
+
+## [0.1.2] — 2026-11-15
+
+Launch-time priority for a closed emulator. This release adds a safe way to
+start BlueStacks at `AboveNormal`; it is not a protection bypass.
+
+### Added
+
+- **Launch boosted** on the Emulator page starts a closed `HD-Player.exe`
+  through the Windows `start /abovenormal` command. The process is created at
+  `AboveNormal` before BlueStacks applies its runtime protection, and the page
+  polls the real priority class to confirm what was retained.
+- `EmulatorService.LaunchCandidate()` resolves `HD-Player.exe` from the known
+  BlueStacks/MSI install roots without reading a protected target.
+- The launch action is disabled while BlueStacks is running and explains that
+  launch priority applies only to a new process.
+- New `launch target resolution` harness check; the default pass now has 18
+  checks and the `--system` pass has 21.
+
+### Changed
+
+- Emulator copy now separates launch-time scheduling from a live boost. The
+  existing **Boost priority** action still reports
+  `Blocked by emulator protection` when BlueStacks denies it.
+- Launch status reports the observed class after start, including the failure
+  case where the emulator did not retain `AboveNormal`.
+
+### Security
+
+- No kernel driver, handle manipulation, suspended-process technique, code
+  injection, or anti-analysis behavior was added. A running BlueStacks remains
+  protected, and the app continues to report that state honestly.
+
 ## [0.1.1] — 2026-11-15
 
 Correctness release for emulator detection and pipeline reporting. No new

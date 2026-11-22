@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Threading;
-using Microsoft.Win32;
 using Stellary.PX.Core;
 using Stellary.PX.Infrastructure;
 using Stellary.PX.Models;
@@ -25,6 +24,7 @@ public sealed class EmulatorViewModel : PageViewModel
     private readonly AppServices _services;
     private readonly DispatcherTimer _watch;
     private EmulatorTarget _target = new();
+    private bool _scanned;
     private string _targetName = "Scanning…";
     private string _targetState = "—";
     private string _targetPath = "—";
@@ -32,16 +32,18 @@ public sealed class EmulatorViewModel : PageViewModel
     private string _priority = "—";
     private string _cacheText = "—";
     private string _status = "Ready.";
+    private string _uncapStatus = "Uncap engine idle.";
+    private bool _uncapActive;
 
     public EmulatorViewModel(AppServices services)
     {
         _services = services;
         Drivers = new ObservableCollection<DriverRow>();
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+        LaunchBoostedCommand = new AsyncRelayCommand(LaunchBoostedAsync);
         BoostCommand = new AsyncRelayCommand(BoostAsync);
         RestorePriorityCommand = new AsyncRelayCommand(RestoreAsync);
         CleanCacheCommand = new AsyncRelayCommand(CleanAsync);
-        ReplaceDriverCommand = new AsyncRelayCommand(ReplaceDriverAsync);
         OpenInstallCommand = new RelayCommand(OpenInstall);
         _watch = new DispatcherTimer(TimeSpan.FromSeconds(4), DispatcherPriority.Background, (_, _) => RefreshInline(), Dispatcher.CurrentDispatcher);
     }
@@ -51,10 +53,10 @@ public sealed class EmulatorViewModel : PageViewModel
 
     public ObservableCollection<DriverRow> Drivers { get; }
     public AsyncRelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand LaunchBoostedCommand { get; }
     public AsyncRelayCommand BoostCommand { get; }
     public AsyncRelayCommand RestorePriorityCommand { get; }
     public AsyncRelayCommand CleanCacheCommand { get; }
-    public AsyncRelayCommand ReplaceDriverCommand { get; }
     public RelayCommand OpenInstallCommand { get; }
 
     public string TargetName { get => _targetName; private set => Set(ref _targetName, value); }
@@ -64,7 +66,10 @@ public sealed class EmulatorViewModel : PageViewModel
     public string Priority { get => _priority; private set => Set(ref _priority, value); }
     public string CacheText { get => _cacheText; private set => Set(ref _cacheText, value); }
     public string Status { get => _status; private set => Set(ref _status, value); }
+    public string UncapStatus { get => _uncapStatus; private set => Set(ref _uncapStatus, value); }
+    public bool UncapActive { get => _uncapActive; private set => Set(ref _uncapActive, value); }
     public bool Running => _target.Running;
+    public bool CanLaunch => _scanned && !_target.Running;
 
     public override void Activate()
     {
@@ -77,13 +82,22 @@ public sealed class EmulatorViewModel : PageViewModel
     private void RefreshInline()
     {
         _target = _services.Engine.Emulator.Detect();
+        _scanned = true;
+        AnnounceTarget();
         TargetName = _target.DisplayName;
         TargetState = _target.Running ? $"Running · PID {_target.Pid}" : "Standby";
         TargetPath = _target.Running
             ? _target.ExecutablePath ?? "path protected by emulator"
             : "no active process";
         InstallDir = _target.InstallDirectory ?? "not detected";
-        Priority = _target.Running ? _target.Priority : "—";
+        UpdatePriorityLabel();
+        UpdateUncapState();
+    }
+
+    private void AnnounceTarget()
+    {
+        OnPropertyChanged(nameof(Running));
+        OnPropertyChanged(nameof(CanLaunch));
     }
 
     private async Task RefreshAsync()
@@ -97,13 +111,16 @@ public sealed class EmulatorViewModel : PageViewModel
         });
 
         _target = target;
+        _scanned = true;
+        AnnounceTarget();
         TargetName = target.DisplayName;
         TargetState = target.Running ? $"Running · PID {target.Pid}" : "Standby";
         TargetPath = target.Running
             ? target.ExecutablePath ?? "path protected by emulator"
             : "no active process";
         InstallDir = target.InstallDirectory ?? "not detected";
-        Priority = target.Running ? target.Priority : "—";
+        UpdatePriorityLabel();
+        UpdateUncapState();
         CacheText = $"{CacheService.Format(cache.Bytes)} · {cache.Folders} folders";
 
         Drivers.Clear();
@@ -121,18 +138,80 @@ public sealed class EmulatorViewModel : PageViewModel
             });
         }
 
-        Status = target.Running ? "Target acquired." : "Waiting for HD-Player.exe.";
+        Status = target.Running ? "Target acquired." : "Waiting for HD-Player.exe. Use Launch boosted.";
+    }
+
+    private async Task LaunchBoostedAsync()
+    {
+        if (!_scanned)
+        {
+            Status = "Scanning target; try again in a moment.";
+            return;
+        }
+        if (_target.Running)
+        {
+            Status = "Close BlueStacks first; launch priority only applies to a new process.";
+            return;
+        }
+
+        var (ok, detail) = await Task.Run(() => _services.Engine.Emulator.LaunchAboveNormal());
+        Status = detail;
+        if (!ok) return;
+
+        for (var i = 0; i < 45; i++)
+        {
+            await Task.Delay(1000);
+            RefreshInline();
+            if (!_target.Running) continue;
+
+            Status = _target.Priority.Contains("Above", StringComparison.OrdinalIgnoreCase)
+                ? $"Launched at {_target.Priority}."
+                : $"Running at {_target.Priority}; launch priority was not retained.";
+            return;
+        }
+
+        Status = "Launch requested; HD-Player is still starting.";
     }
 
     private async Task BoostAsync()
     {
         if (!_target.Running)
         {
-            Status = "Launch BlueStacks or MSI App Player first.";
+            var (config, power) = await Task.Run(() =>
+            {
+                var c = _services.Engine.Emulator.ApplyHighFps(_target.Family);
+                var p = ActivatePowerBoost();
+                return (c, p);
+            });
+            Status = $"{power.Detail} · {config.Detail}";
             return;
         }
-        var result = await Task.Run(() => _services.Engine.Priority.SetAboveNormal(_target.Pid));
-        Status = result.Detail;
+
+        var pid = _target.Pid;
+        var family = _target.Family;
+        Status = "Boosting priority, CPU clock, and arming 2× FPS…";
+
+        var (priority, uncap, highFps, clock) = await Task.Run(() =>
+        {
+            var p = _services.Engine.Priority.SetAboveNormal(pid);
+            var u = _services.Engine.Uncap.Inject(pid);
+            var c = _services.Engine.Emulator.ApplyHighFps(family);
+            var k = ActivatePowerBoost();
+            return (p, u, c, k);
+        });
+
+        // BlueStacks denies PROCESS_SET_INFORMATION to outside handles. The
+        // engine is loaded by now, so retry the same click from inside.
+        if (!priority.Ok)
+        {
+            var inProcess = await Task.Run(() => _services.Engine.Uncap.SetPriority(pid, true));
+            priority = inProcess.Ok
+                ? inProcess
+                : StepResult.Fail(priority.Label, $"{priority.Detail} · {inProcess.Detail}");
+        }
+
+        Status = $"{priority.Detail} · {clock.Detail} · {uncap.Detail} · {highFps.Detail}";
+        UncapStatus = uncap.Detail;
         RefreshInline();
     }
 
@@ -140,12 +219,99 @@ public sealed class EmulatorViewModel : PageViewModel
     {
         if (!_target.Running)
         {
-            Status = "Target not running.";
+            var powerOnly = await Task.Run(RestorePowerBoost);
+            Status = powerOnly.Detail;
+            RefreshInline();
             return;
         }
-        var result = await Task.Run(() => _services.Engine.Priority.Restore(_target.Pid));
-        Status = result.Detail;
+
+        var pid = _target.Pid;
+        var (priority, uncap, clock) = await Task.Run(() =>
+        {
+            var p = _services.Engine.Priority.Restore(pid);
+            var u = _services.Engine.Uncap.Eject(pid);
+            var k = RestorePowerBoost();
+            return (p, u, k);
+        });
+
+        if (!priority.Ok)
+        {
+            var inProcess = await Task.Run(() => _services.Engine.Uncap.SetPriority(pid, false));
+            priority = inProcess.Ok
+                ? inProcess
+                : StepResult.Fail(priority.Label, $"{priority.Detail} · {inProcess.Detail}");
+        }
+
+        Status = $"{priority.Detail} · {clock.Detail} · {uncap.Detail}";
+        UncapStatus = uncap.Detail;
         RefreshInline();
+    }
+
+    /// <summary>Ultimate Performance keeps every core at its boost clock.</summary>
+    private StepResult ActivatePowerBoost()
+    {
+        var settings = _services.Settings.Current;
+        var result = _services.Engine.Power.ActivateUltimate(out var prior);
+        if (result.Ok && string.IsNullOrWhiteSpace(settings.LastPowerPlanGuid) && prior is not null)
+        {
+            settings.LastPowerPlanGuid = prior;
+            _services.Settings.Save();
+        }
+        return result;
+    }
+
+    private StepResult RestorePowerBoost()
+    {
+        var settings = _services.Settings.Current;
+        var result = _services.Engine.Power.Restore(settings.LastPowerPlanGuid);
+        if (result.Ok)
+        {
+            settings.LastPowerPlanGuid = null;
+            _services.Settings.Save();
+        }
+        return result;
+    }
+
+    private void UpdatePriorityLabel()
+    {
+        Priority = _target.Running ? _target.Priority : "—";
+        if (!_target.Running) return;
+
+        // The outside query may still say "protected" after the in-process
+        // export succeeded; the telemetry flag is the honest source then.
+        var telemetry = _services.Engine.Uncap.ReadTelemetry(_target.Pid);
+        if (telemetry.Valid && telemetry.IsPriorityAbove)
+            Priority = "Above normal · in-process";
+    }
+
+    private void UpdateUncapState()
+    {
+        if (!_target.Running)
+        {
+            UncapActive = false;
+            UncapStatus = "Uncap engine idle — start the emulator.";
+            return;
+        }
+
+        var telemetry = _services.Engine.Uncap.ReadTelemetry(_target.Pid);
+        if (telemetry.Valid)
+        {
+            UncapActive = telemetry.IsArmed && (telemetry.IsUncapped || telemetry.IsFakeActive);
+            if (!telemetry.IsArmed && telemetry.Flags == 0)
+                UncapStatus = "Engine loaded · starting…";
+            else if (!telemetry.IsArmed)
+                UncapStatus = "Engine loaded · disarmed. Boost priority re-arms.";
+            else if (telemetry.IsFakeActive)
+                UncapStatus = $"{UncapService.FpsText(telemetry)} · 2× live";
+            else
+                UncapStatus = "Armed · waiting for the FPS counter…";
+            return;
+        }
+
+        UncapActive = false;
+        UncapStatus = _services.Engine.Uncap.IsInjected(_target.Pid)
+            ? "Engine loaded · waiting for the first frame."
+            : "Not injected.";
     }
 
     private async Task CleanAsync()
@@ -170,34 +336,6 @@ public sealed class EmulatorViewModel : PageViewModel
         var result = await Task.Run(() => _services.Engine.Cache.Clean(_target.Running));
         Status = result.Detail;
         CacheText = "0 B";
-        await RefreshAsync();
-    }
-
-    private async Task ReplaceDriverAsync()
-    {
-        var dialog = new OpenFileDialog
-        {
-            Title = "Select a compatible, signed BlueStacks driver",
-            Filter = "Windows driver (*.sys)|*.sys",
-            CheckFileExists = true
-        };
-        if (dialog.ShowDialog() != true) return;
-
-        var target = _target.Family.Contains("MSI", StringComparison.OrdinalIgnoreCase)
-            ? @"C:\Program Files\BlueStacks_msi5\BstkDrv_msi5.sys"
-            : @"C:\Program Files\BlueStacks_nxt\BstkDrv_nxt.sys";
-
-        if (_services.Settings.Current.ConfirmActions)
-        {
-            var answer = MessageBox.Show(
-                $"Replace\n{target}\n\nwith\n{dialog.FileName}\n\nThe existing driver is backed up first. The emulator must be closed.",
-                "Stellary.PX — driver repair",
-                MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-            if (answer != MessageBoxResult.OK) return;
-        }
-
-        var result = await Task.Run(() => _services.Engine.Drivers.Replace(target, dialog.FileName, _target.Running));
-        Status = result.Detail;
         await RefreshAsync();
     }
 

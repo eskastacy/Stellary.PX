@@ -14,10 +14,10 @@
     build is explicitly reported as unsigned and is never labeled otherwise.
 
 .EXAMPLE
-    .\scripts\Build-Release.ps1 -Version 0.1.1 -SkipTests
+    .\scripts\Build-Release.ps1 -Version 0.1.2 -SkipTests
 
 .EXAMPLE
-    .\scripts\Build-Release.ps1 -Version 0.1.1 -Sign -Pfx .\secrets\codesign.pfx `
+    .\scripts\Build-Release.ps1 -Version 0.1.2 -Sign -Pfx .\secrets\codesign.pfx `
         -PfxPassword (Read-Host -AsSecureString)
 #>
 [CmdletBinding()]
