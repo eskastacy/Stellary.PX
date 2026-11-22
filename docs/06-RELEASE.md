@@ -1,4 +1,4 @@
-# 06 · Release
+# 05 · Release
 
 The published release is a single self-contained Windows x64 executable,
 `Stellary.PX-<version>-win-x64.exe`. A folder + ZIP build remains available for
