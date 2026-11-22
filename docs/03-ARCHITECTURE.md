@@ -1,4 +1,4 @@
-# 03 · Architecture
+# 02 · Architecture
 
 Stellary.PX is a framework-dependent .NET 8 WPF application with no NuGet
 dependencies. It separates a thin presentation layer from UI-agnostic services so
