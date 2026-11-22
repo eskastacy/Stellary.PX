@@ -1,4 +1,4 @@
-# 02 · Feature map
+# 01 · Feature map
 
 How each observed capability in the reference build maps to Stellary.PX. Status
 values:
